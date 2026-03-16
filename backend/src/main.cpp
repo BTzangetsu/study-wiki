@@ -1,4 +1,8 @@
 // main.cpp
+
+#define ASIO_STANDALONE
+#define CROW_USE_BOOST 0
+
 #include "crow.h"
 #include "crow/middlewares/cors.h"
 
