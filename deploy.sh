@@ -19,7 +19,7 @@ DEV_API_URL="http://localhost:8080"
 FRONTEND_DIR="./frontend"
 ENV_FILE=".env"
 
-NGINX_CONTAINER="nginx"  # nom du conteneur nginx dans docker-compose
+NGINX_CONTAINER="nginx_proxy"  # nom du conteneur nginx dans docker-compose
 
 # ============================================================
 # LECTURE DE L'ENVIRONNEMENT
