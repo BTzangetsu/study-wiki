@@ -19,11 +19,8 @@ if(MYSQL_CONFIG)
         OUTPUT_VARIABLE MYSQL_LINK_FLAGS
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    message(STATUS "mysql_config     : ${MYSQL_CONFIG}")
-    message(STATUS "Include flags    : ${MYSQL_INCLUDE_FLAGS}")
-    message(STATUS "Link flags       : ${MYSQL_LINK_FLAGS}")
 else()
-    message(FATAL_ERROR "mysql_config introuvable — installe libmariadb-dev")
+    message(FATAL_ERROR "mysql_config introuvable")
 endif()
 
 add_executable(study-wiki src/main.cpp)
@@ -34,16 +31,8 @@ separate_arguments(MYSQL_LINK_FLAGS_LIST UNIX_COMMAND ${MYSQL_LINK_FLAGS})
 target_include_directories(study-wiki PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}
-    ${MYSQL_INCLUDE_DIR}
-)
-
-target_include_directories(study-wiki SYSTEM PRIVATE
     ${CMAKE_SOURCE_DIR}/AsioLib
-)
-
-target_compile_definitions(study-wiki PRIVATE
-    ASIO_STANDALONE
-    CROW_USE_BOOST=0
+    ${MYSQL_INCLUDE_DIR}
 )
 
 target_link_libraries(study-wiki PRIVATE
