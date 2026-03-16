@@ -34,8 +34,11 @@ separate_arguments(MYSQL_LINK_FLAGS_LIST UNIX_COMMAND ${MYSQL_LINK_FLAGS})
 target_include_directories(study-wiki PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/AsioLib
     ${MYSQL_INCLUDE_DIR}
+)
+
+target_include_directories(study-wiki SYSTEM PRIVATE
+    ${CMAKE_SOURCE_DIR}/AsioLib
 )
 
 target_compile_definitions(study-wiki PRIVATE
