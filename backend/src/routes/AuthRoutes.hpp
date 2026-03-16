@@ -11,77 +11,64 @@ class AuthRoutes {
 public:
     static void Register(crow::App<crow::CORSHandler>& app,
                          ConnectionPool& pool,
-                         SessionManager& sessions)
+                         SessionManager& sessions,
+                         RateLimiter& limiter)
     {
         // --------------------------------------------------------
         // POST /api/auth/register
         // --------------------------------------------------------
         CROW_ROUTE(app, "/api/auth/register")
         .methods("POST"_method)
-        ([&pool, &sessions,&limiter](const crow::request& req) {
+        ([&pool, &sessions, &limiter](const crow::request& req) {
             if (limiter.Check(req).code == 429)
                 return crow::response(429, R"({"error":"Too many requests"})");
+
             auto body = crow::json::load(req.body);
             if (!body ||
                 !body.has("username") ||
-                !body.has("email")    ||
                 !body.has("password"))
                 return crow::response(400, R"({"error":"Missing fields"})");
 
             std::string username = body["username"].s();
-            std::string email    = body["email"].s();
+            std::string email    = body.has("email") ? body["email"].s() : "";
             std::string password = body["password"].s();
 
-            // Validation basique
             if (username.size() < 3)
                 return crow::response(400, R"({"error":"Username too short"})");
             if (password.size() < 8)
                 return crow::response(400, R"({"error":"Password too short"})");
-            // Modifier l'INSERT pour gérer le cas email vide
-            uint64_t user_id = Execute(db.get(),
-                "INSERT INTO users (username, email, password_hash) "
-                "VALUES (?, NULLIF(?, ''), ?)",
-                // NULLIF(?, '') → si la chaîne est vide, insère NULL en base
-                {username, email, stored});
-
-            // Modifier la vérification d'unicité — uniquement si email fourni
-            if (!email.empty()) {
-                auto existing = QueryRows(db.get(),
-                    "SELECT id FROM users "
-                    "WHERE username = ? OR (email IS NOT NULL AND email = ?) LIMIT 1",
-                    {username, email});
-                if (!existing.empty())
-                    return crow::response(409,
-                        R"({"error":"Email or username already taken"})");
-            } else {
-                auto existing = QueryRows(db.get(),
-                    "SELECT id FROM users WHERE username = ? LIMIT 1",
-                    {username});
-                if (!existing.empty())
-                    return crow::response(409,
-                        R"({"error":"Username already taken"})");
-            }
+            if (!email.empty() && email.find('@') == std::string::npos)
+                return crow::response(400, R"({"error":"Invalid email"})");
 
             try {
                 auto db = pool.Acquire();
 
-                // Unicité email + username
-                auto existing = QueryRows(db.get(),
-                    "SELECT id FROM users "
-                    "WHERE email = ? OR username = ? LIMIT 1",
-                    {email, username});
-                if (!existing.empty())
-                    return crow::response(409,
-                        R"({"error":"Email or username already taken"})");
+                // Vérification unicité
+                if (!email.empty()) {
+                    auto existing = QueryRows(db.get(),
+                        "SELECT id FROM users "
+                        "WHERE username = ? OR (email IS NOT NULL AND email = ?) LIMIT 1",
+                        {username, email});
+                    if (!existing.empty())
+                        return crow::response(409,
+                            R"({"error":"Email or username already taken"})");
+                } else {
+                    auto existing = QueryRows(db.get(),
+                        "SELECT id FROM users WHERE username = ? LIMIT 1",
+                        {username});
+                    if (!existing.empty())
+                        return crow::response(409,
+                            R"({"error":"Username already taken"})");
+                }
 
-                // Hash PBKDF2 : salt aléatoire + 100 000 itérations
-                std::string salt = GenerateRandomToken();
-                std::string hash = pbkdf2_sha256(password, salt);
-                std::string stored = salt + ":" + hash; // stocké en base
+                // Hash PBKDF2
+                std::string salt   = GenerateRandomToken();
+                std::string hash   = pbkdf2_sha256(password, salt);
+                std::string stored = salt + ":" + hash;
 
                 uint64_t user_id = Execute(db.get(),
                     "INSERT INTO users (username, email, password_hash) "
-                    "VALUES (?, ?, ?)",
+                    "VALUES (?, NULLIF(?, ''), ?)",
                     {username, email, stored});
 
                 std::string token = sessions.CreateSession(

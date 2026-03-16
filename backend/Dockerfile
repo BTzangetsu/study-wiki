@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     libmariadb-dev \
+    libboost-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -32,6 +33,7 @@ FROM debian:12-slim
 
 RUN apt-get update && apt-get install -y \
     libmariadb3 \
+    libboost-system1.74.0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
