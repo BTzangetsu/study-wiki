@@ -1,0 +1,65 @@
+services:
+
+  # ============================================================
+  # BASE DE DONNÉES
+  # ============================================================
+  study-wiki-db:
+    image: mariadb:11
+    container_name: study-wiki-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE:      ${DB_NAME}
+      MARIADB_USER:          ${DB_USER}
+      MARIADB_PASSWORD:      ${DB_PASS}
+    volumes:
+      # Données persistantes — survivent aux redémarrages
+      - study-wiki-db-data:/var/lib/mysql
+      # Script SQL exécuté automatiquement à la première création
+      - ./backend/src/db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
+      - ./backend/src/db/migrations/002_badges.sql:/docker-entrypoint-initdb.d/002_badges.sql
+      - ./backend/src/db/migrations/003_suggestions.sql:/docker-entrypoint-initdb.d/003_suggestions.sql
+    networks:
+      - study-wiki-network
+    # healthcheck — le backend attend que MariaDB soit prêt
+    # avant de démarrer (depends_on condition: service_healthy)
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # BACKEND C++
+  # ============================================================
+  study-wiki-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: study-wiki-backend
+    restart: unless-stopped
+    # Monte le fichier .env comme source de variables
+    env_file: .env
+    # Ne démarre qu'une fois MariaDB healthy
+    depends_on:
+      study-wiki-db:
+        condition: service_healthy
+    networks:
+      - study-wiki-network
+    # Port non exposé vers l'extérieur — nginx y accède
+    # uniquement via le réseau Docker interne
+    expose:
+      - "8080"
+
+# ============================================================
+# RÉSEAU PARTAGÉ
+# Le conteneur nginx existant doit rejoindre ce réseau.
+# On le déclare external: false pour que compose le crée.
+# ============================================================
+networks:
+  study-wiki-network:
+    external: true
+    name: study-wiki-network
+
+volumes:
+  study-wiki-db-data:

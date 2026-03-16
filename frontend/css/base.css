@@ -1,0 +1,1751 @@
+/* ============================================================
+   VARIABLES GLOBALES
+   Toutes les couleurs, espacements et polices du site.
+   Modifier ici = modifier partout.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&display=swap');
+
+:root {
+    /* Couleurs principales */
+    --blue-50:  #E6F1FB;   /* fond très léger, badges info */
+    --blue-100: #B5D4F4;   /* bordures légères */
+    --blue-400: #378ADD;   /* hover sur éléments bleus */
+    --blue-600: #185FA5;   /* couleur accent principale */
+    --blue-800: #0C447C;   /* texte sur fond bleu clair */
+
+    /* Neutres — toute la hiérarchie de gris */
+    --gray-0:   #FFFFFF;   /* blanc pur — cartes */
+    --gray-50:  #F4F6F9;   /* fond de page */
+    --gray-100: #EEF0F4;   /* hover sur éléments neutres */
+    --gray-200: #E0E4ED;   /* bordures */
+    --gray-400: #8A93A8;   /* texte secondaire, meta */
+    --gray-600: #5A6072;   /* texte corps */
+    --gray-900: #1A1A2E;   /* texte principal */
+
+    /* Couleurs sémantiques — status, tags */
+    --red-50:   #FCEBEB;
+    --red-700:  #A32D2D;
+    --green-50: #EAF3DE;
+    --green-700:#3B6D11;
+    --amber-50: #FAEEDA;
+    --amber-700:#854F0B;
+    --purple-50:#EEEDFE;
+    --purple-700:#534AB7;
+    --teal-50:  #E1F5EE;
+    --teal-700: #0F6E56;
+
+    /* Typographie */
+    --font: 'DM Sans', system-ui, sans-serif;
+
+    /* Espacements — on utilise une échelle cohérente */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* Rayons de bordure */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;  /* cercle parfait ou pill */
+
+    /* Bordures */
+    --border: 0.5px solid var(--gray-200);
+
+    /* Transitions */
+    --transition: 150ms ease;
+
+    /* Largeur max du contenu */
+    --max-width: 1100px;
+
+    /* Hauteur de la navbar */
+    --nav-height: 56px;
+}
+
+/* ============================================================
+   RESET
+   Neutralise les comportements par défaut des navigateurs.
+   ============================================================ */
+
+/* Le sélecteur * cible tous les éléments sans exception.
+   box-sizing: border-box → padding et border inclus dans width/height.
+   Sans ça : width:200px + padding:20px = 240px réels (contre-intuitif).
+   Avec ça  : width:200px + padding:20px = 200px réels (intuitif). */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* scroll-behavior: smooth → les ancres (#section) défilent en douceur
+   au lieu de sauter brutalement */
+html {
+    scroll-behavior: smooth;
+}
+
+/* line-height: 1.6 → interligne = 1.6× la taille de police.
+   -webkit-font-smoothing → antialiasing sur macOS/Chrome, texte plus fin.
+   color et background centralisés ici pour tout le document. */
+body {
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--gray-900);
+    background: var(--gray-50);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Les images ne dépassent jamais leur conteneur.
+   display: block supprime l'espace parasite sous les images
+   (les images sont inline par défaut, ce qui laisse un gap). */
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* Les liens n'ont pas de soulignement par défaut —
+   on les stylera explicitement dans chaque composant. */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Les listes n'ont pas de puces par défaut —
+   idem, on les stylera au cas par cas. */
+ul, ol {
+    list-style: none;
+}
+
+/* Les boutons héritent de la police du body.
+   Par défaut, les boutons ont leur propre police système
+   ce qui crée des incohérences visuelles. */
+button, input, select, textarea {
+    font-family: var(--font);
+    font-size: inherit;
+}
+
+/* ============================================================
+   TYPOGRAPHIE
+   Hiérarchie visuelle des titres et textes.
+   ============================================================ */
+
+h1, h2, h3, h4 {
+    font-weight: 500;    /* DM Sans 500 = medium, pas trop gras */
+    line-height: 1.3;    /* interligne plus serré pour les titres */
+    color: var(--gray-900);
+}
+
+h1 { font-size: 28px; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
+h4 { font-size: 15px; }
+
+/* La classe .text-muted rend le texte gris secondaire.
+   Utile pour les métadonnées, dates, auteurs... */
+.text-muted {
+    color: var(--gray-400);
+    font-size: 13px;
+}
+
+.text-sm   { font-size: 13px; }
+.text-xs   { font-size: 11px; }
+.font-medium { font-weight: 500; }
+
+/* ============================================================
+   LAYOUT — structure de page
+   ============================================================ */
+
+/* .container centre le contenu et lui donne une largeur max.
+   margin: 0 auto → marges automatiques gauche+droite = centrage.
+   padding: 0 var(--space-8) → respiration sur les bords en mobile. */
+.container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-8);
+}
+
+/* ============================================================
+   NAVBAR
+   position: sticky → reste en haut lors du scroll.
+   top: 0 → collé au sommet.
+   z-index: 100 → passe au-dessus de tout le reste.
+   border-bottom → séparation visuelle fine avec le contenu.
+   ============================================================ */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: var(--nav-height);
+    background: var(--gray-0);
+    border-bottom: var(--border);
+    display: flex;
+    align-items: center;        /* centre verticalement */
+}
+
+/* display: flex sur .navbar-inner aligne logo + liens côte à côte.
+   justify-content: space-between → logo à gauche, liens à droite. */
+.navbar-inner {
+    width: 100%;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-8);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-logo {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--blue-600);
+    letter-spacing: -0.3px;
+}
+
+.navbar-logo span {
+    color: var(--gray-900);
+}
+
+/* gap: var(--space-6) → espace entre chaque lien.
+   Remplace les vieux margin-right sur chaque élément. */
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.navbar-link {
+    font-size: 14px;
+    color: var(--gray-600);
+    transition: color var(--transition);
+}
+
+.navbar-link:hover,
+.navbar-link.active {
+    color: var(--blue-600);
+    font-weight: 500;
+}
+
+/* ============================================================
+   CARTES
+   background blanc sur fond gris → élévation visuelle sans ombre.
+   ============================================================ */
+.card {
+    background: var(--gray-0);
+    border: var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-5);
+}
+
+/* .card-hover ajoute une interaction au survol.
+   cursor: pointer → le curseur devient une main.
+   transition sur border-color → changement de bordure progressif
+   au lieu d'un saut brutal. */
+.card-hover {
+    cursor: pointer;
+    transition: border-color var(--transition);
+}
+
+.card-hover:hover {
+    border-color: var(--blue-100);
+}
+
+/* ============================================================
+   BOUTONS
+   ============================================================ */
+
+/* Styles communs à tous les boutons.
+   display: inline-flex → permet align-items pour centrer
+   le texte et les icônes verticalement.
+   cursor: pointer → le curseur devient une main.
+   white-space: nowrap → le texte ne passe pas à la ligne. */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 8px var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: var(--border);
+    transition: background var(--transition), border-color var(--transition);
+    white-space: nowrap;
+}
+
+/* Bouton principal — fond bleu, texte blanc.
+   border: none car pas besoin de bordure sur fond coloré. */
+.btn-primary {
+    background: var(--blue-600);
+    color: var(--gray-0);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: var(--blue-400);
+}
+
+/* Bouton secondaire — fond transparent, bordure visible.
+   Utilisé pour les actions moins importantes. */
+.btn-secondary {
+    background: transparent;
+    color: var(--gray-900);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-100);
+}
+
+/* Bouton danger — pour les actions destructives (supprimer). */
+.btn-danger {
+    background: transparent;
+    color: var(--red-700);
+    border-color: var(--red-700);
+}
+
+.btn-danger:hover {
+    background: var(--red-50);
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 13px;
+}
+
+.btn-full {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ============================================================
+   FORMULAIRES
+   ============================================================ */
+
+.form-group {
+    display: flex;
+    flex-direction: column;  /* label au-dessus, input en-dessous */
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-600);
+}
+
+/* outline: none → supprime le contour bleu natif du navigateur
+   (on le remplace par notre propre focus ring).
+   transition sur border-color → changement progressif au focus. */
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 9px var(--space-3);
+    background: var(--gray-0);
+    border: var(--border);
+    border-radius: var(--radius-md);
+    color: var(--gray-900);
+    outline: none;
+    transition: border-color var(--transition);
+}
+
+/* :focus → état quand l'élément est sélectionné (clic ou tab).
+   On remplace le contour par défaut du navigateur par
+   une bordure bleue plus cohérente avec notre design. */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    border-color: var(--blue-600);
+}
+
+.form-textarea {
+    resize: vertical;   /* l'utilisateur peut redimensionner verticalement */
+    min-height: 100px;
+}
+
+/* Message d'erreur sous un champ */
+.form-error {
+    font-size: 12px;
+    color: var(--red-700);
+    margin-top: var(--space-1);
+}
+
+/* ============================================================
+   TAGS / BADGES
+   display: inline-flex pour centrer le texte.
+   border-radius: var(--radius-sm) → légèrement arrondi, pas pill.
+   ============================================================ */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.tag-exam   { background: var(--red-50);    color: var(--red-700);    }
+.tag-cours  { background: var(--green-50);  color: var(--green-700);  }
+.tag-td     { background: var(--amber-50);  color: var(--amber-700);  }
+.tag-tp     { background: var(--purple-50); color: var(--purple-700); }
+.tag-autre  { background: var(--gray-100);  color: var(--gray-600);   }
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);  /* pill */
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-blue   { background: var(--blue-50);   color: var(--blue-800);   }
+.badge-info   { background: var(--teal-50);   color: var(--teal-700);   }
+.badge-done   { background: var(--green-50);  color: var(--green-700);  }
+.badge-rejected { background: var(--red-50);  color: var(--red-700);    }
+.badge-planned  { background: var(--amber-50);color: var(--amber-700);  }
+
+/* ============================================================
+   AVATAR — cercle avec initiales
+   ============================================================ */
+.avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    font-weight: 500;
+    flex-shrink: 0;  /* ne rétrécit pas dans un flex container */
+    background: var(--blue-50);
+    color: var(--blue-800);
+}
+
+.avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+.avatar-md { width: 36px; height: 36px; font-size: 13px; }
+.avatar-lg { width: 48px; height: 48px; font-size: 16px; }
+
+/* ============================================================
+   ÉTOILES DE NOTATION
+   ============================================================ */
+.stars {
+    color: var(--amber-700);
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.pagination {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-6) 0;
+}
+
+.pg-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: var(--border);
+    background: var(--gray-0);
+    color: var(--gray-600);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.pg-btn:hover    { background: var(--gray-100); }
+.pg-btn.active   { background: var(--blue-600); color: var(--gray-0); border-color: var(--blue-600); }
+.pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ============================================================
+   MESSAGES D'ÉTAT — vide, erreur, chargement
+   ============================================================ */
+.state-empty,
+.state-error,
+.state-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-12) var(--space-8);
+    color: var(--gray-400);
+    font-size: 14px;
+    text-align: center;
+    gap: var(--space-3);
+}
+
+/* ============================================================
+   UTILITAIRES — classes réutilisables partout
+   ============================================================ */
+
+/* Flexbox shortcuts */
+.flex          { display: flex; }
+.flex-col      { display: flex; flex-direction: column; }
+.items-center  { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2  { gap: var(--space-2); }
+.gap-3  { gap: var(--space-3); }
+.gap-4  { gap: var(--space-4); }
+
+/* Espacements */
+.mt-4  { margin-top: var(--space-4); }
+.mt-6  { margin-top: var(--space-6); }
+.mb-4  { margin-bottom: var(--space-4); }
+.mb-6  { margin-bottom: var(--space-6); }
+
+/* Truncate — texte tronqué avec "..."
+   Les trois propriétés sont toutes nécessaires ensemble :
+   overflow: hidden → cache ce qui dépasse
+   white-space: nowrap → force sur une ligne
+   text-overflow: ellipsis → ajoute "..." à la fin */
+.truncate {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Divider — ligne de séparation horizontale */
+.divider {
+    height: 0.5px;
+    background: var(--gray-200);
+    margin: var(--space-4) 0;
+}
+
+/* Spinner de chargement — animation CSS pure.
+   border-radius: 50% → cercle.
+   border → anneau gris sauf un côté bleu.
+   animation → tourne en continu. */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-200);
+    border-top-color: var(--blue-600);
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Toast — notification temporaire en bas de page.
+   position: fixed → reste en bas même en scrollant.
+   transform: translateY → animation d'apparition depuis le bas.
+   Les classes .show et .error sont ajoutées via JS. */
+.toast {
+    position: fixed;
+    bottom: var(--space-6);
+    left: 50%;
+    transform: translateX(-50%) translateY(calc(100% + var(--space-6)));
+    background: var(--gray-900);
+    color: var(--gray-0);
+    padding: 10px var(--space-5);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    z-index: 1000;
+    transition: transform 0.25s ease;
+    white-space: nowrap;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+    background: var(--red-700);
+}
+
+/* ============================================================
+   STYLES SPÉCIFIQUES — index.html
+   À ajouter à la fin de base.css
+   ============================================================ */
+
+/* HERO */
+.hero {
+    padding: var(--space-12) 0 var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* BARRE DE FILTRES
+   flex-wrap: wrap → si les filtres ne tiennent pas sur une ligne
+   ils passent à la ligne suivante automatiquement */
+.filters-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    padding-bottom: var(--space-5);
+    border-bottom: var(--border);
+    margin-bottom: var(--space-5);
+}
+
+/* PILLS de type — même style que les badges mais cliquables */
+.type-pills {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.pill {
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    border: var(--border);
+    background: var(--gray-0);
+    color: var(--gray-600);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition),
+                color var(--transition),
+                border-color var(--transition);
+}
+
+.pill:hover  { background: var(--gray-100); }
+
+/* .active est ajouté/retiré par JS au clic */
+.pill.active {
+    background: var(--blue-600);
+    color: var(--gray-0);
+    border-color: var(--blue-600);
+}
+
+/* LAYOUT PRINCIPAL
+   CSS Grid avec deux colonnes.
+   minmax(0, 1fr) → colonne principale flexible
+   240px          → sidebar fixe */
+.page-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: var(--space-6);
+    align-items: start;
+    /* align-items: start → la sidebar ne s'étire pas
+       pour remplir toute la hauteur de la colonne gauche */
+}
+
+/* CARTE DOCUMENT */
+.doc-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+}
+
+/* Icône PDF à gauche de la carte */
+.doc-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--blue-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    /* flex-shrink: 0 → l'icône ne rétrécit jamais,
+       même si le texte à côté est très long */
+}
+
+.doc-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--blue-600);
+    fill: none;
+    stroke-width: 1.5;
+}
+
+/* Partie centrale de la carte — titre + meta */
+.doc-body {
+    flex: 1;       /* prend tout l'espace disponible */
+    min-width: 0;  /* nécessaire pour que .truncate fonctionne
+                      dans un enfant flex — sans ça le flex item
+                      ne rétrécit pas et le texte déborde */
+}
+
+.doc-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+}
+
+/* flex-wrap: wrap → les métadonnées passent à la ligne
+   si la carte est trop étroite */
+.doc-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+/* Partie droite de la carte — note + téléchargements */
+.doc-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+    flex-shrink: 0;
+}
+
+/* SIDEBAR */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    /* position: sticky → la sidebar reste visible en scrollant.
+       top = nav-height + un peu d'espace */
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-4));
+}
+
+.sidebar-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-3);
+}
+
+/* Ligne du leaderboard */
+.lb-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.lb-rank {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-400);
+    width: 16px;
+    text-align: center;
+}
+
+.lb-rank.gold   { color: var(--amber-700); }
+.lb-rank.silver { color: var(--gray-400);  }
+.lb-rank.bronze { color: #9C6B3C;          }
+
+.lb-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--gray-900);
+}
+
+.lb-pts {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blue-600);
+}
+
+/* Ligne stat globale */
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: var(--border);
+    font-size: 13px;
+}
+
+.stat-row:last-child { border-bottom: none; }
+
+.stat-label { color: var(--gray-600); }
+.stat-val   { font-weight: 500; color: var(--gray-900); }
+
+/* ============================================================
+   STYLES AUTH — login.html + register.html
+   ============================================================ */
+
+/* Centrage vertical et horizontal de la page.
+   min-height: calc(100vh - nav-height) → prend toute la hauteur
+   disponible sous la navbar.
+   100vh = 100% de la hauteur de la fenêtre du navigateur. */
+.auth-container {
+    min-height: calc(100vh - var(--nav-height));
+    display: flex;
+    align-items: center;      /* centre verticalement */
+    justify-content: center;  /* centre horizontalement */
+    padding: var(--space-8);
+}
+
+/* La carte du formulaire — largeur max contrainte.
+   width: 100% + max-width → s'adapte aux petits écrans
+   mais ne dépasse jamais 420px sur grand écran. */
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    padding: var(--space-8);
+}
+
+.auth-header {
+    margin-bottom: var(--space-6);
+}
+
+.auth-header h2 {
+    margin-bottom: var(--space-1);
+}
+
+/* Lien texte — couleur bleue, hover souligné */
+.link {
+    color: var(--blue-600);
+    font-weight: 500;
+    transition: opacity var(--transition);
+}
+
+.link:hover { opacity: 0.8; }
+
+.auth-footer {
+    text-align: center;
+    margin-top: var(--space-5);
+    font-size: 14px;
+    color: var(--gray-600);
+}
+
+/* Wrapper input + bouton oeil superposé.
+   position: relative → le bouton absolu se positionne
+   par rapport à ce conteneur, pas par rapport à la page. */
+.input-wrapper {
+    position: relative;
+}
+
+/* Bouton toggle password — positionné en absolu
+   à droite du champ.
+   transform: translateY(-50%) + top: 50% → centrage vertical
+   parfait sans connaître la hauteur du champ. */
+.input-eye {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-400);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color var(--transition);
+}
+
+.input-eye:hover { color: var(--gray-900); }
+
+.input-eye svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Padding-right sur l'input pour ne pas
+   que le texte passe sous le bouton oeil */
+.input-wrapper .form-input {
+    padding-right: 40px;
+}
+
+/* Alerte globale de formulaire —
+   cachée par défaut (height: 0, overflow: hidden)
+   JS ajoute .visible pour l'afficher avec une transition. */
+.form-alert {
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.2s ease, padding 0.2s ease;
+}
+
+.form-alert.visible {
+    max-height: 80px;
+    padding: var(--space-3) var(--space-4);
+}
+
+.form-alert.error {
+    background: var(--red-50);
+    color: var(--red-700);
+}
+
+.form-alert.success {
+    background: var(--green-50);
+    color: var(--green-700);
+}
+
+/* Indicateur de force du mot de passe */
+.password-strength {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+/* Barre de fond grise — la fill bleue/verte/rouge
+   s'élargit par-dessus selon la force */
+.strength-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+/* width et background sont animés via JS
+   transition les rend progressifs */
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.strength-label {
+    font-size: 12px;
+    color: var(--gray-400);
+    min-width: 60px;
+}
+
+/* Badge "optionnel" inline dans un label */
+.badge-optional {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--gray-400);
+    background: var(--gray-100);
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+    margin-left: var(--space-2);
+    vertical-align: middle;
+}
+
+/* Hint sous un champ — texte d'aide discret */
+.form-hint {
+    font-size: 12px;
+    color: var(--gray-400);
+    line-height: 1.5;
+    margin-top: var(--space-1);
+}
+
+/* ============================================================
+   STYLES SPÉCIFIQUES — document.html
+   ============================================================ */
+
+/* HEADER DOCUMENT
+   Layout deux colonnes : infos à gauche, actions à droite.
+   align-items: flex-start → les deux colonnes s'alignent
+   en haut, pas étirées jusqu'en bas. */
+.doc-header {
+    display: flex;
+    gap: var(--space-8);
+    align-items: flex-start;
+    padding: var(--space-8) 0 var(--space-6);
+}
+
+.doc-header-left  { flex: 1; min-width: 0; }
+
+/* flex-direction: column → les boutons s'empilent verticalement.
+   align-items: flex-start → boutons alignés à gauche de la colonne,
+   pas étirés en pleine largeur. */
+.doc-header-right {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: flex-start;
+    flex-shrink: 0;
+    min-width: 160px;
+}
+
+/* Fil d'ariane — texte discret au-dessus du titre */
+.breadcrumb {
+    font-size: 13px;
+    color: var(--gray-400);
+    margin-bottom: var(--space-2);
+}
+
+.breadcrumb span + span::before {
+    content: ' › ';
+    margin: 0 var(--space-1);
+}
+
+.doc-header-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+}
+
+.doc-description {
+    margin-top: var(--space-4);
+    color: var(--gray-600);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* STATS + VOTE */
+.doc-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+}
+
+.stats-counters {
+    display: flex;
+    gap: var(--space-4);
+}
+
+/* Petite pilule de stat : valeur en gros + label petit */
+.stat-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.stat-pill-val {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.stat-pill-label {
+    font-size: 11px;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Zone de vote */
+.vote-zone {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* Étoiles cliquables — grandes et jaunes */
+.star-rating {
+    display: flex;
+    gap: 2px;
+}
+
+/* Les boutons étoiles n'ont pas de style bouton —
+   juste l'étoile elle-même est visible */
+.star {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--gray-200);
+    cursor: pointer;
+    padding: 0 2px;
+    transition: color var(--transition), transform var(--transition);
+    line-height: 1;
+}
+
+/* .active et .hover ajoutés par JS */
+.star.active { color: var(--amber-700); }
+.star.hover  { color: var(--amber-700); transform: scale(1.15); }
+
+/* COMMENTAIRES */
+.comments-section {
+    padding: var(--space-6) 0 var(--space-12);
+}
+
+.comments-section h3 {
+    margin-bottom: var(--space-5);
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+/* Formulaire nouveau commentaire :
+   avatar à gauche, textarea + bouton à droite */
+.comment-form-wrap {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+    align-items: flex-start;
+}
+
+.comment-form-right { flex: 1; }
+
+.comment-login-prompt {
+    font-size: 14px;
+    color: var(--gray-400);
+    margin-bottom: var(--space-6);
+}
+
+/* UN COMMENTAIRE */
+.comment {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.comment-body { flex: 1; min-width: 0; }
+
+.comment-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+}
+
+.comment-username {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.comment-date {
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+.comment-content {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+/* Actions sous un commentaire : like, répondre, supprimer */
+.comment-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+.comment-action-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: var(--gray-400);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color var(--transition);
+}
+
+.comment-action-btn:hover      { color: var(--gray-900); }
+.comment-action-btn.liked      { color: var(--blue-600); }
+
+/* Réponses — indentées à gauche par une bordure bleue */
+.comment-replies {
+    margin-top: var(--space-3);
+    padding-left: var(--space-4);
+    border-left: 2px solid var(--blue-50);
+}
+
+/* Formulaire de réponse inline — caché par défaut,
+   affiché par JS au clic sur "Répondre" */
+.reply-form {
+    display: none;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    align-items: flex-start;
+}
+
+.reply-form.open { display: flex; }
+
+/* MODAL SIGNALEMENT */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;           /* équivalent à top:0 right:0 bottom:0 left:0 */
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: var(--space-4);
+}
+
+.modal {
+    width: 100%;
+    max-width: 440px;
+    padding: var(--space-6);
+}
+
+/* ============================================================
+   STYLES SPÉCIFIQUES — upload.html
+   ============================================================ */
+
+.upload-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: var(--space-8);
+    padding: var(--space-8) 0 var(--space-12);
+    align-items: start;
+}
+
+.upload-form-col  { min-width: 0; }
+.upload-tips-col  {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-4));
+}
+
+/* ZONE DE DÉPÔT
+   border: 2px dashed → pointillés pour indiquer
+   que c'est une zone interactive.
+   transition sur background et border-color pour
+   les états hover et drag-over. */
+.drop-zone {
+    border: 2px dashed var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-10) var(--space-8);
+    text-align: center;
+    cursor: pointer;
+    transition: background var(--transition),
+                border-color var(--transition);
+    margin-bottom: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.drop-zone:hover {
+    background: var(--blue-50);
+    border-color: var(--blue-100);
+}
+
+/* .drag-over ajouté par JS quand un fichier
+   est glissé au-dessus de la zone */
+.drop-zone.drag-over {
+    background: var(--blue-50);
+    border-color: var(--blue-600);
+}
+
+.drop-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--gray-400);
+}
+
+.drop-label {
+    font-size: 14px;
+    color: var(--gray-600);
+}
+
+/* APERÇU FICHIER SÉLECTIONNÉ */
+.file-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--blue-50);
+    border: var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-5);
+}
+
+.file-preview-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--gray-0);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.file-preview-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: var(--blue-600);
+}
+
+.file-preview-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.file-preview-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* FORMULAIRE EN DEUX COLONNES
+   pour les champs courts (type + année, école + matière) */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+/* BARRE DE PROGRESSION */
+.progress-wrap {
+    margin-bottom: var(--space-4);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+/* Conteneur de la barre — fond gris */
+.progress-bar {
+    height: 6px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+/* Partie remplie — width animée via JS.
+   transition: width → l'avancement est progressif
+   et non saccadé. */
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--blue-600);
+    border-radius: var(--radius-full);
+    transition: width 0.2s ease;
+}
+
+/* COLONNE CONSEILS */
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    font-size: 13px;
+    color: var(--gray-600);
+    line-height: 1.5;
+    padding-left: var(--space-4);
+    list-style: disc;
+}
+
+.formats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+}
+
+.format-pill {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+
+.points-table {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+}
+
+.points-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--gray-600);
+}
+
+.points-val {
+    font-weight: 500;
+    color: var(--blue-600);
+}
+
+/* ============================================================
+   STYLES SPÉCIFIQUES — profile.html
+   ============================================================ */
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    flex-wrap: wrap;
+    margin: var(--space-8) 0 var(--space-6);
+    padding: var(--space-6);
+}
+
+.profile-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex: 1;
+    min-width: 0;
+}
+
+/* Avatar large sur le profil — on override la taille */
+.avatar-lg {
+    width: 64px;
+    height: 64px;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.profile-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* Stats horizontales dans l'en-tête */
+.profile-stats {
+    display: flex;
+    gap: var(--space-8);
+}
+
+.profile-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.profile-stat-val {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.profile-stat-label {
+    font-size: 11px;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* SECTIONS */
+.profile-section {
+    margin-bottom: var(--space-6);
+}
+
+.profile-section h3 {
+    margin-bottom: var(--space-4);
+}
+
+/* GRILLE DE BADGES
+   auto-fill → autant de colonnes que possible
+   minmax(120px, 1fr) → chaque badge fait au moins 120px */
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-3);
+}
+
+/* Carte d'un badge */
+.badge-card {
+    background: var(--gray-0);
+    border: var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    text-align: center;
+}
+
+/* Icône du badge — grand cercle coloré */
+.badge-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background: var(--blue-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.badge-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-900);
+    line-height: 1.3;
+}
+
+.badge-date {
+    font-size: 11px;
+    color: var(--gray-400);
+}
+
+/* ONGLETS */
+.profile-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: var(--border);
+    margin-bottom: var(--space-5);
+}
+
+/* Chaque onglet a une bordure basse qui devient bleue
+   quand il est actif — c'est l'underline indicator pattern */
+.profile-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: var(--space-3) var(--space-5);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-400);
+    cursor: pointer;
+    transition: color var(--transition),
+                border-color var(--transition);
+    margin-bottom: -1px; /* chevauche le border-bottom du parent
+                            pour que la bordure active soit au-dessus */
+}
+
+.profile-tab:hover { color: var(--gray-900); }
+
+.profile-tab.active {
+    color: var(--blue-600);
+    border-bottom-color: var(--blue-600);
+}
+
+/* Liste de docs dans le profil — même style que index */
+.profile-doc-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* ============================================================
+   STYLES PARTAGÉS — leaderboard, suggestions, admin
+   ============================================================ */
+
+.page-hero {
+    padding: var(--space-8) 0 var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* LEADERBOARD */
+.lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.lb-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--space-2) var(--space-4);
+    border-bottom: var(--border);
+}
+
+.lb-table td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border);
+    color: var(--gray-900);
+    vertical-align: middle;
+}
+
+.lb-table tr:last-child td { border-bottom: none; }
+
+/* Ligne surlignée si c'est l'utilisateur connecté */
+.lb-table tr.is-me td {
+    background: var(--blue-50);
+    font-weight: 500;
+}
+
+.lb-table tr:hover td { background: var(--gray-50); }
+
+.medal {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* SUGGESTIONS */
+.suggestions-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: var(--space-8);
+    align-items: start;
+    padding-bottom: var(--space-12);
+}
+
+.suggestions-aside {
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-4));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+/* Carte d'une suggestion */
+.sug-card {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+    margin-bottom: var(--space-3);
+}
+
+/* Bouton upvote — colonne à gauche */
+.upvote-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: var(--gray-0);
+    border: var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    min-width: 48px;
+    transition: background var(--transition),
+                border-color var(--transition),
+                color var(--transition);
+    flex-shrink: 0;
+}
+
+.upvote-btn:hover {
+    background: var(--blue-50);
+    border-color: var(--blue-100);
+}
+
+/* .voted ajouté par JS quand l'user a voté */
+.upvote-btn.voted {
+    background: var(--blue-50);
+    border-color: var(--blue-600);
+    color: var(--blue-600);
+}
+
+.upvote-arrow {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--gray-400);
+}
+
+.upvote-btn.voted .upvote-arrow { color: var(--blue-600); }
+
+.upvote-count {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.sug-body { flex: 1; min-width: 0; }
+
+.sug-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+}
+
+.sug-desc {
+    font-size: 13px;
+    color: var(--gray-600);
+    line-height: 1.6;
+    margin-bottom: var(--space-2);
+}
+
+.sug-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+/* ADMIN */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-3);
+    padding: var(--space-6) 0 0;
+}
+
+.admin-stat-card {
+    background: var(--gray-0);
+    border: var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* Carte avec badge rouge si il y a des éléments en attente */
+.admin-stat-card.has-pending {
+    border-color: var(--red-700);
+    background: var(--red-50);
+}
+
+.admin-stat-val {
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.admin-stat-card.has-pending .admin-stat-val {
+    color: var(--red-700);
+}
+
+.admin-stat-label {
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+/* Table admin — réutilise lb-table + quelques overrides */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: var(--space-6);
+}
+
+.admin-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--border);
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: var(--space-3);
+    border-bottom: var(--border);
+    color: var(--gray-900);
+    vertical-align: middle;
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover td { background: var(--gray-50); }
+
+/* Cellule d'actions — boutons côte à côte */
+.admin-actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}

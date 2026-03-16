@@ -1,0 +1,153 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="login.html">
+                    <button class="btn btn-secondary btn-sm">Connexion</button>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="auth-container">
+            <div class="auth-card card">
+
+                <div class="auth-header">
+                    <h2>Créer un compte</h2>
+                    <p class="text-muted">
+                        Rejoins la communauté et partage tes documents
+                    </p>
+                </div>
+
+                <form id="register-form" novalidate>
+
+                    <div class="form-group">
+                        <label class="form-label" for="username">
+                            Nom d'utilisateur
+                        </label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            class="form-input"
+                            placeholder="ton_pseudo"
+                            autocomplete="username"
+                            required
+                            minlength="3"
+                        >
+                        <span class="form-error" id="username-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="email">
+                            Adresse email
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-input"
+                            placeholder="ton@email.fr"
+                            autocomplete="email"
+                            required
+                        >
+                        <span class="form-error" id="email-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="password">
+                            Mot de passe
+                        </label>
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-input"
+                                placeholder="8 caractères minimum"
+                                autocomplete="new-password"
+                                required
+                                minlength="8"
+                            >
+                            <button type="button" class="input-eye"
+                                    id="toggle-password"
+                                    aria-label="Afficher le mot de passe">
+                                <svg id="eye-icon" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor"
+                                     stroke-width="1.5">
+                                    <path d="M1 12s4-8 11-8 11 8 11
+                                             8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Indicateur de force du mot de passe -->
+                        <div class="password-strength" id="password-strength">
+                            <div class="strength-bar">
+                                <div class="strength-fill"
+                                     id="strength-fill"></div>
+                            </div>
+                            <span class="strength-label"
+                                  id="strength-label"></span>
+                        </div>
+                        <span class="form-error" id="password-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="email">
+                            Adresse email
+                            <!-- Badge optionnel inline -->
+                            <span class="badge-optional">optionnel</span>
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-input"
+                            placeholder="ton@email.fr"
+                            autocomplete="email"
+                        >
+                        <span class="form-hint">
+                            Uniquement pour récupérer ton compte si tu oublies
+                            ton mot de passe. Jamais partagé ni utilisé autrement.
+                        </span>
+                        <span class="form-error" id="email-error"></span>
+                    </div>
+
+                    <div class="form-alert" id="form-alert"></div>
+
+                    <button type="submit"
+                            class="btn btn-primary btn-full"
+                            id="submit-btn">
+                        Créer mon compte
+                    </button>
+
+                </form>
+
+                <p class="auth-footer">
+                    Déjà un compte ?
+                    <a href="login.html" class="link">Se connecter</a>
+                </p>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/register.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,946 @@
+# Annales — Plateforme de partage de documents étudiants
+
+## Vue d'ensemble
+
+Plateforme communautaire permettant aux étudiants d'uploader et télécharger
+des annales d'examens, TD, cours et TP, avec système de gamification,
+commentaires threadés et classements.
+
+---
+
+## Stack technique
+
+| Composant       | Technologie                          |
+|----------------|--------------------------------------|
+| Backend         | C++17, framework Crow (multithread)  |
+| Base de données | MariaDB (InnoDB, pool de connexions) |
+| Stockage        | Object storage externe (Backblaze B2 / Wasabi) — fichiers jamais sur le serveur |
+| Frontend        | HTML / CSS / JavaScript (à venir)    |
+| Hébergement     | VM Linux (Hetzner CX21 ou équivalent)|
+| Auth            | Sessions en mémoire (unordered_map + shared_mutex) + cookie HttpOnly |
+| Crypto          | SHA-256, HMAC-SHA256, PBKDF2 — 100% maison, zéro dépendance externe |
+
+---
+
+## Architecture du projet
+```
+src/
+├── main.cpp                    ← init pool MariaDB, SessionManager, Crow, routes
+├── config/
+│   └── Config.hpp              ← lecture .env + variables d'environnement système
+├── db/
+│   ├── ConnectionPool.hpp      ← pool thread-safe de connexions MariaDB (RAII)
+│   ├── QueryHelpers.hpp        ← QueryRows() / Execute() / ExtractSessionToken()
+│   └── migrations/
+│       └── 001_init.sql        ← schéma complet
+├── session/
+│   └── SessionManager.hpp      ← sessions en mémoire, purge automatique toutes les heures
+├── middleware/
+│   └── AuthGuard.hpp           ← vérifie cookie session → injecte Session dans context
+├── routes/
+│   ├── AuthRoutes.hpp
+│   ├── DocumentRoutes.hpp
+│   ├── CommentRoutes.hpp
+│   ├── SearchRoutes.hpp
+│   ├── UserRoutes.hpp
+│   ├── LeaderboardRoutes.hpp
+│   ├── ReportRoutes.hpp
+│   └── AdminRoutes.hpp
+└── utils/
+    └── Crypto.hpp              ← SHA-256, HMAC-SHA256, PBKDF2, GenerateRandomToken
+```
+
+---
+
+## Configuration — fichier `.env`
+
+À placer à la racine du projet. Ne jamais commiter.
+```env
+DB_HOST=127.0.0.1
+DB_USER=annales
+DB_PASS=motdepasse
+DB_NAME=annales_db
+DB_PORT=3306
+DB_POOL_SIZE=10          # nombre de connexions MariaDB maintenues en parallèle
+
+STORAGE_ENDPOINT=https://s3.us-west-001.backblazeb2.com
+STORAGE_BUCKET=annales-bucket
+STORAGE_SECRET=ta_cle_secrete_b2
+STORAGE_URL_TTL=900      # durée de validité des signed URLs en secondes (15 min)
+
+ALLOWED_ORIGIN=https://tondomaine.fr
+PORT=8080
+THREADS=4                # workers Crow — pas le nb max d'users, voir note ci-dessous
+```
+
+> **Note `THREADS`** : c'est le nombre de threads worker dans le pool Crow.
+> Chaque thread traite une requête à la fois mais passe 90% du temps
+> à attendre MariaDB → 4 threads suffisent pour des centaines d'utilisateurs
+> simultanés. Valeur recommandée : nombre de cœurs CPU × 2.
+
+---
+
+## Base de données — schéma des tables
+
+### `schools`
+| Colonne     | Type         | Description                  |
+|-------------|--------------|------------------------------|
+| id          | INT PK       |                              |
+| name        | VARCHAR(200) | Nom unique de l'école        |
+| city        | VARCHAR(100) |                              |
+| country     | VARCHAR(100) | Défaut : 'France'            |
+| doc_count   | INT          | Cache du nb de documents     |
+| created_at  | DATETIME     |                              |
+
+### `subjects`
+| Colonne    | Type         | Description                        |
+|------------|--------------|------------------------------------|
+| id         | INT PK       |                                    |
+| name       | VARCHAR(150) | Nom de la matière                  |
+| school_id  | INT FK       | Référence schools(id)              |
+
+Contrainte UNIQUE sur (name, school_id) — même matière peut exister dans deux écoles.
+
+### `users`
+| Colonne       | Type         | Description                                      |
+|---------------|--------------|--------------------------------------------------|
+| id            | INT PK       |                                                  |
+| username      | VARCHAR(50)  | Unique                                           |
+| email         | VARCHAR(200) | Unique                                           |
+| password_hash | VARCHAR(255) | Format : `salt:hash` (PBKDF2-SHA256, 100k iter.) |
+| school_id     | INT FK       | École de l'utilisateur (nullable)                |
+| points        | INT          | Score de gamification, défaut 0                  |
+| is_active     | TINYINT      | 0 = banni, 1 = actif                             |
+| is_admin      | TINYINT      | 0 = user, 1 = admin                              |
+| created_at    | DATETIME     |                                                  |
+| last_login    | DATETIME     | Mis à jour à chaque login                        |
+
+### `documents`
+| Colonne        | Type          | Description                                         |
+|----------------|---------------|-----------------------------------------------------|
+| id             | INT PK        |                                                     |
+| user_id        | INT FK        | Auteur — référence users(id)                        |
+| subject_id     | INT FK        | Matière (nullable)                                  |
+| school_id      | INT FK        | École (nullable)                                    |
+| title          | VARCHAR(300)  |                                                     |
+| description    | TEXT          | Nullable                                            |
+| year           | YEAR          | Année de l'examen/cours                             |
+| type           | ENUM          | 'exam', 'td', 'cours', 'tp', 'autre'                |
+| storage_key    | VARCHAR(500)  | Chemin unique dans B2/Wasabi — format : userId/timestamp_token_filename |
+| storage_bucket | VARCHAR(200)  | Nom du bucket                                       |
+| size_bytes     | BIGINT        | Taille du fichier                                   |
+| avg_rating     | FLOAT         | Moyenne recalculée à chaque vote                    |
+| vote_count     | INT           | Nombre de votes                                     |
+| download_count | INT           | Incrémenté à chaque génération de download-url      |
+| is_approved    | TINYINT       | 1 = visible, 0 = masqué (admin seulement)           |
+| created_at     | DATETIME      |                                                     |
+
+### `comments`
+| Colonne     | Type     | Description                                                |
+|-------------|----------|------------------------------------------------------------|
+| id          | INT PK   |                                                            |
+| document_id | INT FK   | ON DELETE CASCADE                                          |
+| user_id     | INT FK   |                                                            |
+| parent_id   | INT FK   | NULL = commentaire racine, sinon = réponse à un commentaire. Profondeur infinie. ON DELETE CASCADE |
+| content     | TEXT     | Vidé (pas supprimé) lors d'un soft delete                  |
+| is_deleted  | TINYINT  | 0/1 — noeud conservé pour ne pas casser les threads enfants|
+| created_at  | DATETIME |                                                            |
+| updated_at  | DATETIME | Auto-update ON UPDATE CURRENT_TIMESTAMP                    |
+
+### `document_votes`
+| Colonne     | Type    | Description                         |
+|-------------|---------|-------------------------------------|
+| user_id     | INT FK  |                                     |
+| document_id | INT FK  | ON DELETE CASCADE                   |
+| score       | TINYINT | Entre 1 et 5 (CHECK constraint)     |
+
+Contrainte UNIQUE(user_id, document_id) — 1 vote par user par document.
+UPSERT via `ON DUPLICATE KEY UPDATE` pour modifier un vote existant.
+
+### `comment_likes`
+| Colonne    | Type   | Description       |
+|------------|--------|-------------------|
+| user_id    | INT FK |                   |
+| comment_id | INT FK | ON DELETE CASCADE |
+
+Contrainte UNIQUE(user_id, comment_id) — 1 like par user par commentaire.
+INSERT IGNORE pour idempotence.
+
+### `favorites`
+| Colonne     | Type   | Description       |
+|-------------|--------|-------------------|
+| user_id     | INT FK |                   |
+| document_id | INT FK | ON DELETE CASCADE |
+
+Contrainte UNIQUE(user_id, document_id).
+INSERT IGNORE pour idempotence.
+
+### `reports`
+| Colonne     | Type  | Description                                              |
+|-------------|-------|----------------------------------------------------------|
+| user_id     | INT FK|                                                          |
+| document_id | INT FK| Nullable — exactement l'un des deux doit être non-null   |
+| comment_id  | INT FK| Nullable — CHECK constraint enforce l'exclusivité        |
+| reason      | ENUM  | 'spam', 'inappropriate', 'wrong_content', 'copyright', 'other' |
+| details     | TEXT  | Précisions optionnelles                                  |
+| status      | ENUM  | 'pending' → 'reviewed' ou 'dismissed' (par admin)        |
+
+Un user ne peut signaler le même document/commentaire qu'une seule fois
+(vérifié en base avant INSERT).
+
+### `badges`
+| Colonne         | Type         | Description                                      |
+|-----------------|--------------|--------------------------------------------------|
+| name            | VARCHAR(100) | Unique                                           |
+| condition_type  | ENUM         | 'upload_count', 'download_received', 'points_threshold', 'vote_received', 'comment_count', 'first_upload' |
+| condition_value | INT          | Valeur seuil pour déclencher le badge            |
+
+### `user_badges`
+| Colonne   | Type   | Description                         |
+|-----------|--------|-------------------------------------|
+| user_id   | INT FK |                                     |
+| badge_id  | INT FK |                                     |
+| earned_at | DATETIME |                                   |
+
+Contrainte UNIQUE(user_id, badge_id) — un badge attribué une seule fois.
+
+### `points_log`
+| Colonne    | Type  | Description                                               |
+|------------|-------|-----------------------------------------------------------|
+| user_id    | INT FK|                                                           |
+| delta      | INT   | Positif ou négatif                                        |
+| reason     | ENUM  | 'upload', 'download_received', 'vote_received', 'comment_posted', 'report_validated', 'badge_earned' |
+| ref_id     | INT   | ID du document ou commentaire concerné (nullable)         |
+
+---
+
+## Système de points
+
+| Action                              | Points  | Moment                                      |
+|-------------------------------------|---------|---------------------------------------------|
+| Upload d'un document                | +10     | POST /api/documents (après enregistrement)  |
+| Téléchargement reçu sur un document | +1      | GET /api/documents/:id/download-url         |
+| Commentaire posté                   | +2      | POST /api/documents/:id/comments            |
+
+> **À implémenter — GamificationService** :
+> - Vote reçu sur un document : +1 par étoile au-dessus de 3
+> - Badge obtenu : +5
+> - Signalement validé par admin : -5 sur l'auteur du document
+
+---
+
+## Système de sessions
+
+- Sessions stockées **en mémoire** dans un `unordered_map<string, Session>`
+- Clé = token (64 caractères alphanumériques, généré via `mt19937` + `random_device`)
+- Valeur = `{ user_id, username, is_admin, expires_at }`
+- Durée de vie : 24h par défaut
+- Thread-safety : `shared_mutex` (plusieurs lectures simultanées, 1 écriture exclusive)
+- Purge automatique des sessions expirées : thread dédié, toutes les heures
+- **Conséquence** : redémarrer le serveur déconnecte tous les utilisateurs
+- Cookie : `HttpOnly; SameSite=Strict; Path=/; Max-Age=86400`
+- Lors d'un ban utilisateur (admin) : toutes ses sessions sont invalidées immédiatement
+
+---
+
+## Flux upload / download
+
+Les fichiers ne transitent **jamais** par le serveur.
+```
+UPLOAD :
+  1. POST /api/documents/upload-url   → serveur génère une signed PUT URL (TTL 15 min)
+  2. Client PUT directement vers B2    → fichier envoyé sans passer par le serveur
+  3. POST /api/documents               → serveur enregistre les métadonnées en base
+
+DOWNLOAD :
+  1. GET /api/documents/:id/download-url → serveur vérifie auth + génère signed GET URL
+  2. Client GET directement depuis B2     → téléchargement sans passer par le serveur
+```
+
+### Signed URLs maison (Crypto.hpp)
+Format : `endpoint/bucket/key?expires=TIMESTAMP&sig=HMAC(secret, METHOD:key:TIMESTAMP)`
+- Signature : HMAC-SHA256 avec la clé secrète B2/Wasabi
+- Expiration vérifiée par le timestamp dans l'URL
+- `storage_key` préfixé par `user_id/` — vérifié côté serveur pour empêcher
+  un user d'enregistrer le fichier d'un autre
+
+---
+
+## Cryptographie (utils/Crypto.hpp)
+
+Zéro dépendance externe. Tout est implémenté from scratch.
+
+### SHA-256
+Implémentation standard. Padding du message, compression par blocs de 64 octets,
+64 rounds de mélange bitwise. Produit 32 octets.
+
+### HMAC-SHA256
+Double passe SHA-256 avec la clé XORée (ipad 0x36 / opad 0x5c).
+Résistant aux length extension attacks contrairement à SHA256(key + message).
+Utilisé pour les signed URLs.
+
+### PBKDF2-SHA256
+Utilisé pour le hashage des mots de passe.
+- 100 000 itérations de HMAC-SHA256 en chaîne
+- Salt aléatoire unique par utilisateur (64 chars)
+- Résultat XOR de toutes les itérations → 32 octets encodés en hex
+- Stockage en base : `salt:hash` dans la colonne `password_hash`
+- Vérification au login en temps constant (XOR accumulé) → résistant aux timing attacks
+- ~50ms par vérification sur un CPU standard
+
+### GenerateRandomToken
+`mt19937` seedé par `random_device{}`, protégé par mutex statique.
+Produit 64 caractères alphanumériques. Utilisé pour les tokens de session et les salts PBKDF2.
+
+---
+
+## Routes API complètes
+
+### Auth — `/api/auth`
+
+#### `POST /api/auth/register`
+Crée un compte utilisateur.
+
+**Body JSON :**
+```json
+{
+  "username": "string (min 3 chars)",
+  "email":    "string (doit contenir @)",
+  "password": "string (min 8 chars)"
+}
+```
+**Réponses :**
+- `201` + Set-Cookie session — compte créé, session ouverte immédiatement
+- `400` — champ manquant ou invalide
+- `409` — email ou username déjà pris
+
+---
+
+#### `POST /api/auth/login`
+Ouvre une session.
+
+**Body JSON :**
+```json
+{
+  "email":    "string",
+  "password": "string"
+}
+```
+**Réponses :**
+- `200` + Set-Cookie session
+- `400` — champ manquant
+- `401` — email ou mot de passe incorrect (message volontairement générique)
+- `403` — compte banni
+
+---
+
+#### `POST /api/auth/logout`
+Invalide la session courante.
+
+**Cookie requis :** `session=<token>`
+
+**Réponses :**
+- `200` + Set-Cookie vide (expire immédiatement)
+
+---
+
+#### `GET /api/auth/me`
+Retourne le profil complet de l'utilisateur connecté.
+
+**Cookie requis :** `session=<token>`
+
+**Réponse `200` :**
+```json
+{
+  "id": 1,
+  "username": "string",
+  "email": "string",
+  "points": 42,
+  "is_admin": false,
+  "created_at": "2024-01-01 12:00:00"
+}
+```
+- `401` — non authentifié
+
+---
+
+#### `PATCH /api/auth/me`
+Modifie le profil de l'utilisateur connecté.
+
+**Cookie requis :** `session=<token>`
+
+**Body JSON (tous les champs optionnels) :**
+```json
+{
+  "username": "nouveau_nom",
+  "password": "nouveau_mot_de_passe"
+}
+```
+**Réponses :**
+- `200` — modifié
+- `400` — validation échouée
+- `409` — username déjà pris
+
+---
+
+#### `DELETE /api/auth/me`
+Supprime définitivement le compte et invalide la session.
+
+**Cookie requis :** `session=<token>`
+
+---
+
+### Documents — `/api/documents`
+
+#### `GET /api/documents`
+Liste paginée avec filtres.
+
+**Query params (tous optionnels) :**
+| Param      | Type   | Description                          |
+|------------|--------|--------------------------------------|
+| school_id  | int    | Filtrer par école                    |
+| subject_id | int    | Filtrer par matière                  |
+| year       | int    | Filtrer par année                    |
+| type       | string | 'exam', 'td', 'cours', 'tp', 'autre' |
+| page       | int    | Défaut 1                             |
+| limit      | int    | Défaut 20, max 100                   |
+
+**Réponse `200` :**
+```json
+{
+  "page": 1,
+  "limit": 20,
+  "documents": [
+    {
+      "id": 1, "title": "...", "description": "...",
+      "year": "2023", "type": "exam",
+      "avg_rating": 4.2, "vote_count": 15,
+      "download_count": 203, "size_bytes": 204800,
+      "created_at": "...", "author": "username",
+      "subject": "Mathématiques", "school": "INSA Lyon"
+    }
+  ]
+}
+```
+
+---
+
+#### `GET /api/documents/:id`
+Détail d'un document.
+
+**Params URL :** `:id` = ID entier du document
+
+**Réponses :** `200` objet document complet, `404` non trouvé
+
+---
+
+#### `POST /api/documents/upload-url`
+Génère une URL signée pour uploader un fichier directement vers B2.
+**Doit être enregistrée AVANT `GET /api/documents/:id` dans Crow.**
+
+**Cookie requis :** `session=<token>`
+
+**Body JSON :**
+```json
+{
+  "filename":   "exam_maths_2023.pdf",
+  "size_bytes": 204800
+}
+```
+**Limite :** 50 Mo max.
+
+**Réponse `200` :**
+```json
+{
+  "upload_url":  "https://b2.endpoint/bucket/1/1234567_abc_exam.pdf?expires=...&sig=...",
+  "storage_key": "1/1234567_abc_exam.pdf",
+  "expires_in":  900
+}
+```
+> Le client fait ensuite un PUT HTTP directement sur `upload_url` avec le fichier binaire,
+> sans passer par le serveur.
+
+---
+
+#### `POST /api/documents`
+Enregistre un document en base **après** l'upload B2.
+
+**Cookie requis :** `session=<token>`
+
+**Body JSON :**
+```json
+{
+  "storage_key": "1/1234567_abc_exam.pdf",
+  "title":       "Examen final maths 2023",
+  "description": "Corrigé inclus",
+  "year":        2023,
+  "type":        "exam",
+  "subject_id":  3,
+  "school_id":   1,
+  "size_bytes":  204800
+}
+```
+Champs obligatoires : `storage_key`, `title`, `type`.
+Champs optionnels : `description`, `year`, `subject_id`, `school_id`, `size_bytes`.
+
+**Réponse `201` :**
+```json
+{ "id": 42, "message": "Document created" }
+```
+> **Points attribués :** +10 points à l'auteur + entrée dans `points_log`.
+
+---
+
+#### `GET /api/documents/favorites`
+Liste les documents mis en favoris par l'utilisateur connecté.
+**Doit être enregistrée AVANT `GET /api/documents/:id` dans Crow (conflit de route).**
+
+**Cookie requis :** `session=<token>`
+
+**Réponse `200` :** même structure que `GET /api/documents`
+
+---
+
+#### `GET /api/documents/:id/download-url`
+Génère une URL signée pour télécharger le fichier directement depuis B2.
+
+**Cookie requis :** `session=<token>`
+
+**Params URL :** `:id` = ID du document
+
+**Réponse `200` :**
+```json
+{
+  "download_url": "https://b2.endpoint/bucket/key?expires=...&sig=...",
+  "expires_in":   900
+}
+```
+> **Effets :** `download_count` du document incrémenté de 1.
+> **Points attribués :** +1 point à l'auteur du document + entrée dans `points_log`.
+
+---
+
+#### `PATCH /api/documents/:id`
+Modifie titre ou description. Réservé au propriétaire ou admin.
+
+**Cookie requis :** `session=<token>`
+
+**Body JSON (optionnels) :**
+```json
+{ "title": "Nouveau titre", "description": "Nouvelle description" }
+```
+
+---
+
+#### `DELETE /api/documents/:id`
+Supprime le document de la base. Réservé au propriétaire ou admin.
+> **Note :** le fichier dans B2 n'est PAS supprimé immédiatement —
+> à gérer via un job de nettoyage séparé en utilisant le `storage_key`.
+
+**Cookie requis :** `session=<token>`
+
+---
+
+#### `POST /api/documents/:id/vote`
+Vote sur un document (1 à 5 étoiles). Crée ou met à jour le vote existant.
+
+**Cookie requis :** `session=<token>`
+
+**Body JSON :**
+```json
+{ "score": 4 }
+```
+> `avg_rating` et `vote_count` sont recalculés immédiatement via sous-requête SQL.
+
+---
+
+#### `DELETE /api/documents/:id/vote`
+Retire son vote. `avg_rating` recalculé (COALESCE → 0 si plus aucun vote).
+
+**Cookie requis :** `session=<token>`
+
+---
+
+#### `POST /api/documents/:id/favorite`
+Ajoute aux favoris. INSERT IGNORE — idempotent.
+
+**Cookie requis :** `session=<token>`
+
+---
+
+#### `DELETE /api/documents/:id/favorite`
+Retire des favoris.
+
+**Cookie requis :** `session=<token>`
+
+---
+
+### Commentaires — `/api/comments` et `/api/documents/:id/comments`
+
+#### `GET /api/documents/:id/comments`
+Retourne l'arbre complet des commentaires d'un document.
+
+**Params URL :** `:id` = ID du document
+
+**Réponse `200` :**
+```json
+{
+  "comments": [
+    {
+      "id": 1, "parent_id": -1,
+      "user_id": 3, "username": "alice",
+      "content": "Très utile merci !",
+      "is_deleted": false,
+      "like_count": 5,
+      "created_at": "...", "updated_at": "...",
+      "replies": [
+        {
+          "id": 4, "parent_id": 1,
+          "content": "Oui surtout la partie 2",
+          "replies": []
+        }
+      ]
+    }
+  ]
+}
+```
+> Arbre reconstruit **en mémoire** depuis une seule requête SQL triée par
+> `created_at ASC`. Les commentaires supprimés apparaissent avec `content: "[deleted]"` 
+> pour préserver les threads enfants.
+
+---
+
+#### `POST /api/documents/:id/comments`
+Poste un commentaire ou une réponse.
+
+**Cookie requis :** `session=<token>`
+
+**Params URL :** `:id` = ID du document
+
+**Body JSON :**
+```json
+{
+  "content":   "Mon commentaire (1 à 2000 chars)",
+  "parent_id": 12
+}
+```
+`parent_id` optionnel — si fourni, doit appartenir au même document et ne pas être supprimé.
+
+**Réponse `201` :**
+```json
+{ "id": 7, "message": "Comment posted" }
+```
+> **Points attribués :** +2 points à l'auteur.
+
+---
+
+#### `PATCH /api/comments/:id`
+Modifie le contenu d'un commentaire. Réservé au propriétaire.
+
+**Cookie requis :** `session=<token>`
+
+**Body JSON :**
+```json
+{ "content": "Contenu modifié (1 à 2000 chars)" }
+```
+
+---
+
+#### `DELETE /api/comments/:id`
+Soft delete — `is_deleted = 1`, contenu vidé. Noeud conservé pour les réponses.
+Réservé au propriétaire ou admin.
+
+**Cookie requis :** `session=<token>`
+
+---
+
+#### `POST /api/comments/:id/like`
+Like un commentaire. INSERT IGNORE — idempotent.
+
+**Cookie requis :** `session=<token>`
+
+---
+
+#### `DELETE /api/comments/:id/like`
+Retire son like.
+
+**Cookie requis :** `session=<token>`
+
+---
+
+### Recherche — `/api/search`
+
+#### `GET /api/search`
+Recherche full-text + filtres. Au moins un paramètre requis.
+
+**Query params :**
+| Param      | Type   | Description                                           |
+|------------|--------|-------------------------------------------------------|
+| q          | string | Recherche dans titre, description, matière, école     |
+| school_id  | int    | Filtre école                                          |
+| subject_id | int    | Filtre matière                                        |
+| year       | int    | Filtre année                                          |
+| type       | string | Filtre type                                           |
+| page       | int    | Défaut 1                                              |
+| limit      | int    | Défaut 20, max 50                                     |
+
+> Tri : si `q` présent, les titres qui matchent exactement remontent en premier,
+> puis tri par `avg_rating DESC`. Sinon tri par `created_at DESC`.
+
+---
+
+### Utilisateurs — `/api/users`
+
+#### `GET /api/users/:id`
+Profil public d'un utilisateur.
+
+**Params URL :** `:id` = ID de l'utilisateur
+
+**Réponse `200` :**
+```json
+{
+  "id": 3, "username": "alice", "points": 150,
+  "school": "INSA Lyon", "created_at": "...",
+  "documents": [ ... 20 derniers ... ],
+  "badges": [
+    { "name": "Premier upload", "description": "...", "icon_key": "...", "earned_at": "..." }
+  ]
+}
+```
+
+---
+
+#### `GET /api/users/:id/documents`
+Liste paginée des documents d'un utilisateur.
+
+**Query params :** `page`, `limit` (max 50)
+
+---
+
+### Classements — `/api/leaderboard`
+
+#### `GET /api/leaderboard/users`
+Top contributeurs triés par points décroissants.
+
+**Query params :** `limit` (défaut 20, max 100)
+
+**Réponse `200` :**
+```json
+{
+  "leaderboard": [
+    { "rank": 1, "id": 3, "username": "alice",
+      "points": 500, "school": "INSA Lyon", "upload_count": 12 }
+  ]
+}
+```
+
+---
+
+#### `GET /api/leaderboard/schools`
+Top écoles triées par `doc_count DESC`, puis `total_downloads DESC`.
+
+**Query params :** `limit` (défaut 20, max 100)
+
+**Réponse `200` :**
+```json
+{
+  "leaderboard": [
+    { "rank": 1, "id": 1, "name": "INSA Lyon", "city": "Lyon",
+      "doc_count": 42, "total_downloads": 1203, "contributor_count": 18 }
+  ]
+}
+```
+
+---
+
+### Signalements — `/api/reports`
+
+#### `POST /api/reports`
+Signale un document **ou** un commentaire (pas les deux).
+
+**Cookie requis :** `session=<token>`
+
+**Body JSON :**
+```json
+{
+  "document_id": 42,
+  "reason":      "spam",
+  "details":     "Précisions optionnelles"
+}
+```
+ou
+```json
+{
+  "comment_id": 12,
+  "reason":     "inappropriate"
+}
+```
+
+**Raisons valides :** `spam`, `inappropriate`, `wrong_content`, `copyright`, `other`
+
+**Réponses :**
+- `201` — signalement enregistré
+- `409` — déjà signalé par cet utilisateur
+
+---
+
+### Admin — `/api/admin`
+
+Toutes les routes admin vérifient `is_admin = true` dans la session.
+Retournent `403` si non admin.
+
+#### `GET /api/admin/reports`
+Liste les signalements.
+
+**Query params :**
+| Param  | Type   | Description                                     |
+|--------|--------|-------------------------------------------------|
+| status | string | 'pending' (défaut), 'reviewed', 'dismissed'     |
+| page   | int    |                                                 |
+| limit  | int    | max 100                                         |
+
+---
+
+#### `PATCH /api/admin/reports/:id`
+Change le statut d'un signalement.
+
+**Body JSON :**
+```json
+{ "status": "reviewed" }
+```
+Valeurs : `reviewed`, `dismissed`
+
+---
+
+#### `PATCH /api/admin/documents/:id`
+Approuve ou masque un document.
+
+**Body JSON :**
+```json
+{ "is_approved": 0 }
+```
+
+---
+
+#### `DELETE /api/admin/documents/:id`
+Suppression forcée d'un document (hard delete).
+
+---
+
+#### `DELETE /api/admin/comments/:id`
+Hard delete d'un commentaire et de tous ses enfants (ON DELETE CASCADE).
+
+---
+
+#### `PATCH /api/admin/users/:id`
+Bannit ou débannit un utilisateur.
+
+**Body JSON :**
+```json
+{ "is_active": 0 }
+```
+> Impossible de bannir un autre admin.
+> Si `is_active = 0` : toutes les sessions actives de cet utilisateur
+> sont invalidées immédiatement via `SessionManager::DeleteSessionsForUser()`.
+
+#### `POST   /api/suggestions`
+**Body JSON:**
+```json
+  { "title": "...", "description": "..." }
+```
+
+**Retourne: JSON**
+```json
+  { "id": 12, "message": "Suggestion created" }
+```
+
+#### `GET    /api/suggestions`
+**Params  : JSON**
+?status=pending&page=&limit=
+**Retourne: JSON**
+```json
+{
+  "suggestions": [
+    {
+      "id": 12,
+      "title": "...",
+      "description": "...",
+      "status": "pending",
+      "upvotes": 14,
+      "has_voted": true,   ← bool selon l'user connecté
+      "username": "alice",
+      "created_at": "..."
+    }
+  ]
+}
+```
+
+#### `POST   /api/suggestions/:id/vote`
+**Retourne: JSON**
+```json
+{ "message": "Voted" }
+```
+
+#### `DELETE /api/suggestions/:id/vote`
+**Retourne: JSON**
+```json
+{ "message": "Vote removed" }
+```
+
+#### `PATCH  /api/admin/suggestions/:id`
+**Body    : JSON** 
+```json
+{ "status": "planned" | "done" | "rejected" }
+```
+**Retourne: JSON**
+```json
+{ "message": "Updated" }
+```
+
+Le champ `has_voted` est important pour le front — il permet d'afficher le bouton upvote déjà activé si l'user a déjà voté, sans faire une deuxième requête.
+
+---
+
+### Panel admin
+#### `GET    /api/admin/stats`
+**Retourne: JSON**
+```json
+{
+  "pending_reports":      5,
+  "pending_documents":    3,
+  "pending_suggestions":  8,
+  "total_users":          3401,
+  "total_documents":      1284,
+  "new_users_today":      12,
+  "new_docs_today":       4
+}
+```
+
+---
+
+## État d'avancement
+
+### Terminé
+- [x] Schéma base de données complet (001_init.sql)
+- [x] `ConnectionPool` — pool MariaDB thread-safe avec reconnexion automatique (mysql_ping)
+- [x] `QueryHelpers` — `QueryRows()`, `Execute()`, `ExtractSessionToken()`
+- [x] `SessionManager` — sessions en mémoire, thread-safe, purge automatique
+- [x] `Crypto.hpp` — SHA-256, HMAC-SHA256, PBKDF2-SHA256, GenerateRandomToken
+- [x] `Config.hpp` — lecture .env + variables d'environnement
+- [x] `AuthRoutes` — register, login, logout, me (GET/PATCH/DELETE)
+- [x] `DocumentRoutes` — liste, détail, upload-url, create, favorites, download-url, patch, delete, vote, favorite
+- [x] `CommentRoutes` — arbre, post, patch, delete (soft), like/unlike
+- [x] `SearchRoutes` — full-text + filtres combinés
+- [x] `UserRoutes` — profil public, documents paginés
+- [x] `LeaderboardRoutes` — classement users et écoles
+- [x] `ReportRoutes` — signalement document ou commentaire
+- [x] `AdminRoutes` — reports, documents, comments, users + `DeleteSessionsForUser`
+- [x] `main.cpp` — assemblage complet, CORS, purge thread, signal handler, CMakeLists.txt
+- [x] `GamificationService` — attribution automatique des badges selon les seuils
+- [x] `RateLimiter` middleware — token bucket par IP
+
+### À faire
+- [ ] Job de nettoyage B2 — supprimer les fichiers orphelins (storage_key sans document en base)
+- [ ] Frontend — HTML/CSS/JS
+- [ ] `GET /api/users/:id/badges` — route dédiée badges si nécessaire
+- [ ] Migration PostgreSQL si charge importante

@@ -1,0 +1,269 @@
+<!-- document.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">← Retour</a>
+                <a href="profile.html" class="navbar-link" data-auth
+                   id="nav-username">Mon profil</a>
+                <a href="admin.html" class="navbar-link" data-admin>Admin</a>
+                <a href="upload.html" data-auth>
+                    <button class="btn btn-primary btn-sm">Uploader</button>
+                </a>
+                <div class="flex gap-2" data-noauth>
+                    <a href="login.html">
+                        <button class="btn btn-secondary btn-sm">Connexion</button>
+                    </a>
+                    <a href="register.html">
+                        <button class="btn btn-primary btn-sm">S'inscrire</button>
+                    </a>
+                </div>
+                <button class="btn btn-secondary btn-sm"
+                        data-auth onclick="logout()">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+
+            <!-- Zone chargement/erreur -->
+            <div id="doc-state"></div>
+
+            <!-- Contenu principal — injecté par JS -->
+            <div id="doc-content" style="display:none">
+
+                <!-- HEADER DU DOCUMENT -->
+                <div class="doc-header">
+
+                    <div class="doc-header-left">
+                        <!-- Fil d'ariane : école > matière -->
+                        <div class="breadcrumb" id="doc-breadcrumb"></div>
+
+                        <h1 id="doc-title"></h1>
+
+                        <div class="doc-header-meta">
+                            <!-- Avatar + auteur + date -->
+                            <div class="flex items-center gap-2">
+                                <div class="avatar avatar-sm"
+                                     id="doc-avatar"></div>
+                                <span class="text-muted"
+                                      id="doc-author"></span>
+                            </div>
+                            <span class="text-muted">·</span>
+                            <span class="text-muted" id="doc-date"></span>
+                            <span class="text-muted">·</span>
+                            <span class="text-muted" id="doc-size"></span>
+                            <span id="doc-tag"></span>
+                        </div>
+
+                        <p class="doc-description" id="doc-description"></p>
+                    </div>
+
+                    <!-- Actions à droite -->
+                    <div class="doc-header-right">
+
+                        <!-- Bouton télécharger -->
+                        <button class="btn btn-primary"
+                                id="btn-download"
+                                data-auth>
+                            Télécharger
+                        </button>
+
+                        <!-- Message si non connecté -->
+                        <a href="login.html" data-noauth>
+                            <button class="btn btn-secondary">
+                                Connecte-toi pour télécharger
+                            </button>
+                        </a>
+
+                        <!-- Bouton favori -->
+                        <button class="btn btn-secondary"
+                                id="btn-favorite"
+                                data-auth>
+                            ♡ Favori
+                        </button>
+
+                        <!-- Bouton signaler -->
+                        <button class="btn btn-secondary btn-sm"
+                                id="btn-report"
+                                data-auth>
+                            Signaler
+                        </button>
+
+                        <!-- Boutons owner/admin -->
+                        <div id="owner-actions" style="display:none"
+                             class="flex gap-2">
+                            <a id="btn-edit-link" href="#">
+                                <button class="btn btn-secondary btn-sm">
+                                    Modifier
+                                </button>
+                            </a>
+                            <button class="btn btn-danger btn-sm"
+                                    id="btn-delete">
+                                Supprimer
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- STATS + NOTATION -->
+                <div class="doc-stats">
+
+                    <!-- Compteurs -->
+                    <div class="stats-counters">
+                        <div class="stat-pill">
+                            <span class="stat-pill-val"
+                                  id="stat-downloads">0</span>
+                            <span class="stat-pill-label">téléchargements</span>
+                        </div>
+                        <div class="stat-pill">
+                            <span class="stat-pill-val"
+                                  id="stat-votes">0</span>
+                            <span class="stat-pill-label">votes</span>
+                        </div>
+                        <div class="stat-pill">
+                            <span class="stat-pill-val"
+                                  id="stat-rating">—</span>
+                            <span class="stat-pill-label">note moyenne</span>
+                        </div>
+                    </div>
+
+                    <!-- Zone de vote — visible si connecté -->
+                    <div class="vote-zone" data-auth id="vote-zone">
+                        <span class="text-muted text-sm">
+                            Ta note :
+                        </span>
+                        <!-- 5 étoiles cliquables -->
+                        <div class="star-rating" id="star-rating">
+                            <button class="star" data-value="1">★</button>
+                            <button class="star" data-value="2">★</button>
+                            <button class="star" data-value="3">★</button>
+                            <button class="star" data-value="4">★</button>
+                            <button class="star" data-value="5">★</button>
+                        </div>
+                        <button class="btn btn-secondary btn-sm"
+                                id="btn-remove-vote"
+                                style="display:none">
+                            Retirer
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- SECTION COMMENTAIRES -->
+                <section class="comments-section">
+
+                    <h3>Commentaires
+                        <span class="text-muted text-sm"
+                              id="comment-count"></span>
+                    </h3>
+
+                    <!-- Formulaire nouveau commentaire — connecté -->
+                    <div class="comment-form-wrap" data-auth>
+                        <div class="avatar avatar-sm"
+                             id="comment-avatar"></div>
+                        <div class="comment-form-right">
+                            <textarea
+                                id="comment-input"
+                                class="form-textarea"
+                                placeholder="Ajoute un commentaire…"
+                                rows="2"
+                            ></textarea>
+                            <div class="flex gap-2"
+                                 style="justify-content:flex-end;
+                                        margin-top:8px">
+                                <button class="btn btn-primary btn-sm"
+                                        id="btn-comment">
+                                    Publier
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Message si non connecté -->
+                    <div data-noauth class="comment-login-prompt">
+                        <a href="login.html" class="link">
+                            Connecte-toi
+                        </a>
+                        pour laisser un commentaire
+                    </div>
+
+                    <!-- Arbre des commentaires — injecté par JS -->
+                    <div id="comments-list"></div>
+
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL SIGNALEMENT
+         Enveloppé dans un faux viewport pour que position:fixed
+         ne collapse pas l'iframe -->
+    <div id="report-modal" style="display:none">
+        <div class="modal-backdrop">
+            <div class="modal card">
+                <div class="flex justify-between items-center"
+                     style="margin-bottom:var(--space-4)">
+                    <h3>Signaler ce document</h3>
+                    <button class="btn btn-secondary btn-sm"
+                            id="btn-close-report">✕</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Raison</label>
+                    <select id="report-reason" class="form-select">
+                        <option value="spam">Spam</option>
+                        <option value="inappropriate">
+                            Contenu inapproprié
+                        </option>
+                        <option value="wrong_content">
+                            Contenu incorrect
+                        </option>
+                        <option value="copyright">
+                            Violation de copyright
+                        </option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        Précisions
+                        <span class="badge-optional">optionnel</span>
+                    </label>
+                    <textarea id="report-details"
+                              class="form-textarea"
+                              placeholder="Décris le problème…"
+                              rows="3"></textarea>
+                </div>
+                <button class="btn btn-danger btn-full"
+                        id="btn-submit-report">
+                    Envoyer le signalement
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/document.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">← Site</a>
+                <span class="navbar-link"
+                      style="color:var(--blue-600);font-weight:500">
+                    Panel admin
+                </span>
+                <button class="btn btn-secondary btn-sm" onclick="logout()">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+
+            <!-- STATS RAPIDES -->
+            <div class="admin-stats" id="admin-stats">
+                <div class="admin-stat-card" id="stat-pending-reports">
+                    <span class="admin-stat-val">—</span>
+                    <span class="admin-stat-label">Signalements</span>
+                </div>
+                <div class="admin-stat-card" id="stat-pending-docs">
+                    <span class="admin-stat-val">—</span>
+                    <span class="admin-stat-label">Docs en attente</span>
+                </div>
+                <div class="admin-stat-card" id="stat-pending-sugs">
+                    <span class="admin-stat-val">—</span>
+                    <span class="admin-stat-label">Suggestions</span>
+                </div>
+                <div class="admin-stat-card">
+                    <span class="admin-stat-val"
+                          id="stat-total-users">—</span>
+                    <span class="admin-stat-label">Utilisateurs</span>
+                </div>
+                <div class="admin-stat-card">
+                    <span class="admin-stat-val"
+                          id="stat-total-docs">—</span>
+                    <span class="admin-stat-label">Documents</span>
+                </div>
+                <div class="admin-stat-card">
+                    <span class="admin-stat-val"
+                          id="stat-new-today">—</span>
+                    <span class="admin-stat-label">Nouveaux aujourd'hui</span>
+                </div>
+            </div>
+
+            <!-- ONGLETS ADMIN -->
+            <div class="profile-tabs" style="margin-top:var(--space-6)">
+                <button class="profile-tab active"
+                        data-tab="reports">
+                    Signalements
+                </button>
+                <button class="profile-tab" data-tab="documents">
+                    Documents
+                </button>
+                <button class="profile-tab" data-tab="suggestions">
+                    Suggestions
+                </button>
+                <button class="profile-tab" data-tab="users">
+                    Utilisateurs
+                </button>
+            </div>
+
+            <div id="admin-state"></div>
+            <div id="admin-content"></div>
+
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/admin.js"></script>
+
+</body>
+</html>

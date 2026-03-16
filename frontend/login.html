@@ -1,0 +1,125 @@
+<!-- login.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="register.html">
+                    <button class="btn btn-primary btn-sm">S'inscrire</button>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- ============================================================
+             LAYOUT CENTRÉ
+             On utilise un div centré avec largeur max contrainte.
+             C'est le pattern classique pour les pages auth —
+             formulaire au milieu, rien d'autre pour ne pas distraire.
+             ============================================================ -->
+        <div class="auth-container">
+
+            <div class="auth-card card">
+
+                <div class="auth-header">
+                    <h2>Bon retour</h2>
+                    <p class="text-muted">
+                        Connecte-toi pour accéder à tes documents
+                    </p>
+                </div>
+
+                <!-- novalidate désactive la validation HTML native
+                     du navigateur — on gère la validation nous-mêmes
+                     en JS pour un rendu cohérent avec notre design -->
+                <form id="login-form" novalidate>
+
+                    <div class="form-group">
+                        <label class="form-label" for="identifier">
+                            Nom d'utilisateur ou email
+                        </label>
+                        <input
+                            type="text"
+                            id="identifier"
+                            name="identifier"
+                            class="form-input"
+                            placeholder="ton_pseudo ou ton@email.fr"
+                            autocomplete="username"
+                            required
+                        >
+                        <span class="form-error" id="identifier-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="password">
+                            Mot de passe
+                        </label>
+                        <!-- Wrapper pour pouvoir positionner
+                             le bouton "voir mot de passe" en absolu -->
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-input"
+                                placeholder="••••••••"
+                                autocomplete="current-password"
+                                required
+                            >
+                            <!-- Bouton toggle visibilité mot de passe -->
+                            <button
+                                type="button"
+                                class="input-eye"
+                                id="toggle-password"
+                                aria-label="Afficher le mot de passe"
+                            >
+                                <!-- Icône oeil — SVG inline pour éviter
+                                     une dépendance à une lib d'icônes -->
+                                <svg id="eye-icon" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor"
+                                     stroke-width="1.5">
+                                    <path d="M1 12s4-8 11-8 11 8 11
+                                             8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="form-error" id="password-error"></span>
+                    </div>
+
+                    <!-- Message d'erreur global — pour les erreurs
+                         qui ne concernent pas un champ précis
+                         (ex: "identifiants incorrects") -->
+                    <div class="form-alert" id="form-alert"></div>
+
+                    <button type="submit" class="btn btn-primary btn-full"
+                            id="submit-btn">
+                        Se connecter
+                    </button>
+
+                </form>
+
+                <p class="auth-footer">
+                    Pas encore de compte ?
+                    <a href="register.html" class="link">S'inscrire</a>
+                </p>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/login.js"></script>
+
+</body>
+</html>

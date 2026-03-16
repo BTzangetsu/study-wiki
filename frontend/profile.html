@@ -1,0 +1,163 @@
+<!-- profile.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">Documents</a>
+                <a href="leaderboard.html" class="navbar-link">Classements</a>
+                <a href="suggestions.html" class="navbar-link">Suggestions</a>
+                <a href="admin.html" class="navbar-link" data-admin>Admin</a>
+                <button class="btn btn-secondary btn-sm"
+                        data-auth onclick="logout()">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+
+            <div id="profile-state"></div>
+
+            <div id="profile-content" style="display:none">
+
+                <!-- EN-TÊTE PROFIL -->
+                <div class="profile-header card">
+
+                    <div class="profile-header-left">
+                        <!-- Grand avatar avec initiales -->
+                        <div class="avatar avatar-lg" id="profile-avatar"></div>
+                        <div class="profile-info">
+                            <h2 id="profile-username"></h2>
+                            <p class="text-muted" id="profile-school"></p>
+                            <p class="text-muted text-sm"
+                               id="profile-since"></p>
+                        </div>
+                    </div>
+
+                    <!-- Stats rapides -->
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <span class="profile-stat-val"
+                                  id="stat-points"></span>
+                            <span class="profile-stat-label">points</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="profile-stat-val"
+                                  id="stat-doc-count"></span>
+                            <span class="profile-stat-label">documents</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="profile-stat-val"
+                                  id="stat-dl-count"></span>
+                            <span class="profile-stat-label">télécharg.</span>
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'action — visibles seulement sur son propre profil -->
+                    <div id="own-profile-actions" style="display:none">
+                        <button class="btn btn-secondary btn-sm"
+                                id="btn-edit-profile">
+                            Modifier le profil
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- BADGES -->
+                <section class="profile-section" id="badges-section">
+                    <h3>Badges</h3>
+                    <div id="badges-list" class="badges-grid"></div>
+                </section>
+
+                <!-- ONGLETS : documents / favoris -->
+                <div class="profile-tabs">
+                    <button class="profile-tab active"
+                            data-tab="documents">
+                        Documents
+                    </button>
+                    <!-- Favoris seulement sur son propre profil -->
+                    <button class="profile-tab"
+                            data-tab="favorites"
+                            id="tab-favorites"
+                            style="display:none">
+                        Favoris
+                    </button>
+                </div>
+
+                <!-- Contenu des onglets -->
+                <div id="tab-content"></div>
+
+            </div>
+
+            <!-- MODAL ÉDITION PROFIL -->
+            <div id="edit-modal" style="display:none">
+                <div class="modal-backdrop">
+                    <div class="modal card">
+                        <div class="flex justify-between items-center"
+                             style="margin-bottom:var(--space-5)">
+                            <h3>Modifier le profil</h3>
+                            <button class="btn btn-secondary btn-sm"
+                                    id="btn-close-edit">✕</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="edit-username">
+                                Nom d'utilisateur
+                            </label>
+                            <input type="text" id="edit-username"
+                                   class="form-input">
+                            <span class="form-error"
+                                  id="edit-username-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="edit-password">
+                                Nouveau mot de passe
+                                <span class="badge-optional">optionnel</span>
+                            </label>
+                            <input type="password" id="edit-password"
+                                   class="form-input"
+                                   placeholder="Laisser vide pour ne pas changer">
+                            <span class="form-error"
+                                  id="edit-password-error"></span>
+                        </div>
+
+                        <div class="form-alert" id="edit-alert"></div>
+
+                        <div class="flex gap-2" style="margin-top:var(--space-4)">
+                            <button class="btn btn-primary"
+                                    id="btn-save-profile"
+                                    style="flex:1">
+                                Enregistrer
+                            </button>
+                            <button class="btn btn-danger"
+                                    id="btn-delete-account">
+                                Supprimer le compte
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/profile.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,620 @@
+# Annales.io — Documentation Frontend
+
+## Vue d'ensemble
+
+Interface web statique (HTML/CSS/JS vanilla) qui communique avec le backend
+C++ via une API REST. Aucun framework JS, aucun bundler — les fichiers sont
+servis directement par nginx ou tout serveur de fichiers statiques.
+
+---
+
+## Stack technique
+
+| Composant  | Choix                                      |
+|------------|--------------------------------------------|
+| HTML       | Sémantique (nav, main, section, aside...)  |
+| CSS        | Vanilla — variables CSS, pas de framework  |
+| JavaScript | Vanilla ES2020 — async/await, fetch        |
+| Police     | DM Sans (Google Fonts)                     |
+| Icônes     | SVG inline — aucune dépendance externe     |
+
+---
+
+## Structure des fichiers
+```
+frontend/
+├── index.html          ← liste des documents + filtres + sidebar
+├── login.html          ← connexion (username ou email + mdp)
+├── register.html       ← inscription (email optionnel)
+├── document.html       ← détail doc + téléchargement + votes + commentaires
+├── upload.html         ← upload fichier en deux étapes (signed URL)
+├── profile.html        ← profil public ou propre profil (onglets + badges)
+├── leaderboard.html    ← classement users et écoles
+├── suggestions.html    ← suggestions d'amélioration + votes
+├── admin.html          ← panel admin (stats + 4 onglets)
+│
+├── css/
+│   └── base.css        ← TOUT le CSS du projet (voir détail ci-dessous)
+│
+└── js/
+    ├── api.js          ← toutes les fonctions fetch — aucune page ne fait
+    │                      de fetch directement
+    ├── auth.js         ← état utilisateur connecté + helpers globaux
+    └── pages/
+        ├── index.js        ← logique page d'accueil
+        ├── login.js        ← logique connexion + helpers formulaires
+        ├── register.js     ← logique inscription + force mot de passe
+        ├── document.js     ← logique détail document
+        ├── upload.js       ← logique upload + drag & drop + progression
+        ├── profile.js      ← logique profil + onglets + modal édition
+        ├── leaderboard.js  ← logique classements
+        ├── suggestions.js  ← logique suggestions + votes
+        └── admin.js        ← logique panel admin
+```
+
+---
+
+## Principes fondamentaux
+
+### Chargement des scripts
+
+Les scripts sont toujours chargés en bas du `<body>`, jamais dans le
+`<head>`. L'ordre est impératif sur chaque page :
+```html
+<script src="js/api.js"></script>    <!-- 1. toujours en premier -->
+<script src="js/auth.js"></script>   <!-- 2. dépend de api.js -->
+<script src="js/pages/xxx.js"></script> <!-- 3. dépend des deux -->
+```
+
+### URL du backend
+
+Chaque page déclare l'URL du backend via `data-api` sur le `<body>` :
+```html
+<body data-api="http://localhost:8080">
+```
+
+`api.js` lit cette valeur via `document.body.dataset.api`. Pour passer
+en production il suffit de changer cette valeur — aucune modification
+du JS n'est nécessaire.
+
+### Cookies et sessions
+
+Le cookie de session `session=...` est posé par le serveur avec les
+flags `HttpOnly; SameSite=Strict`. Le JavaScript ne peut pas le lire —
+c'est une protection de sécurité volontaire. Le navigateur l'envoie
+automatiquement à chaque requête grâce au `credentials: 'include'`
+présent dans toutes les fonctions `fetch` de `api.js`.
+
+---
+
+## Design system
+
+### Palette de couleurs (variables CSS dans `:root`)
+
+| Variable        | Valeur    | Usage                              |
+|-----------------|-----------|------------------------------------|
+| `--blue-600`    | `#185FA5` | Accent principal, boutons, liens   |
+| `--blue-50`     | `#E6F1FB` | Fonds badges, hover, info          |
+| `--blue-800`    | `#0C447C` | Texte sur fond bleu clair          |
+| `--gray-0`      | `#FFFFFF` | Fond des cartes                    |
+| `--gray-50`     | `#F4F6F9` | Fond de page                       |
+| `--gray-200`    | `#E0E4ED` | Bordures                           |
+| `--gray-400`    | `#8A93A8` | Texte secondaire, métadonnées      |
+| `--gray-600`    | `#5A6072` | Texte corps                        |
+| `--gray-900`    | `#1A1A2E` | Texte principal                    |
+
+Couleurs sémantiques des tags documents :
+
+| Type   | Fond           | Texte          |
+|--------|----------------|----------------|
+| exam   | `--red-50`     | `--red-700`    |
+| cours  | `--green-50`   | `--green-700`  |
+| td     | `--amber-50`   | `--amber-700`  |
+| tp     | `--purple-50`  | `--purple-700` |
+| autre  | `--gray-100`   | `--gray-600`   |
+
+### Police
+
+DM Sans importée depuis Google Fonts. Deux graisses : 400 (regular)
+et 500 (medium). Jamais de 600 ou 700.
+
+### Cartes
+
+Fond blanc `--gray-0`, bordure `0.5px solid --gray-200`,
+`border-radius: 12px`. Pas d'ombre — flat design.
+La classe `.card-hover` ajoute un curseur pointer et un changement
+de bordure au survol.
+
+### Espacements
+
+Échelle fixe via variables : `--space-1` (4px) à `--space-12` (48px).
+Toujours utiliser ces variables — jamais de valeurs px arbitraires.
+
+---
+
+## `css/base.css` — organisation
+
+Le fichier est organisé en blocs dans cet ordre :
+```
+1. @import Google Fonts
+2. :root — variables globales
+3. Reset — neutralise les styles navigateur
+4. Typographie — h1/h2/h3, classes utilitaires texte
+5. Layout — .container, .navbar, .navbar-inner...
+6. Cartes — .card, .card-hover
+7. Boutons — .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-sm...
+8. Formulaires — .form-group, .form-input, .form-label, .form-error...
+9. Tags / Badges — .tag, .tag-exam, .badge, .badge-blue...
+10. Avatar — .avatar, .avatar-sm, .avatar-md, .avatar-lg
+11. Étoiles — .stars
+12. Pagination — .pagination, .pg-btn
+13. Messages d'état — .state-loading, .state-empty, .state-error
+14. Utilitaires — .flex, .truncate, .divider, .spinner, .toast
+15. Styles index.html — .hero, .filters-bar, .pill, .page-layout...
+16. Styles auth — .auth-container, .auth-card, .input-eye...
+17. Styles document.html — .doc-header, .doc-stats, .star-rating...
+18. Styles upload.html — .drop-zone, .file-preview, .progress-bar...
+19. Styles profile.html — .profile-header, .badges-grid, .profile-tabs...
+20. Styles partagés leaderboard/suggestions/admin — .lb-table, .sug-card...
+```
+
+---
+
+## `js/api.js` — communication avec le backend
+
+Toutes les requêtes HTTP passent par ce fichier.
+Aucune page ne fait de `fetch()` directement.
+
+### Fonction centrale `api(path, options)`
+```js
+api('/api/documents', { method: 'GET', params: { page: 1 } })
+```
+
+- Construit l'URL avec les query params via `URLSearchParams`
+- Ajoute `credentials: 'include'` sur toutes les requêtes
+- Sérialise le body en JSON et ajoute `Content-Type: application/json`
+- Parse la réponse JSON
+- Lance une erreur avec `err.status = code HTTP` si `res.ok === false`
+
+### Raccourcis
+```js
+get(path, params)      // GET avec query params
+post(path, body)       // POST avec body JSON
+patch(path, body)      // PATCH avec body JSON
+del(path)              // DELETE sans body
+```
+
+### Objets disponibles
+
+Chaque objet regroupe toutes les routes d'un domaine :
+```js
+Auth.login({ identifier, password })
+Auth.register({ username, email, password })
+Auth.logout()
+Auth.me()
+Auth.update({ username, password })
+Auth.delete()
+
+Documents.list(params)           // GET /api/documents?...
+Documents.get(id)                // GET /api/documents/:id
+Documents.favorites()            // GET /api/documents/favorites
+Documents.uploadUrl(data)        // POST /api/documents/upload-url
+Documents.create(data)           // POST /api/documents
+Documents.update(id, data)       // PATCH /api/documents/:id
+Documents.delete(id)             // DELETE /api/documents/:id
+Documents.downloadUrl(id)        // GET /api/documents/:id/download-url
+Documents.vote(id, score)        // POST /api/documents/:id/vote
+Documents.removeVote(id)         // DELETE /api/documents/:id/vote
+Documents.favorite(id)           // POST /api/documents/:id/favorite
+Documents.unfavorite(id)         // DELETE /api/documents/:id/favorite
+
+Comments.list(docId)             // GET /api/documents/:id/comments
+Comments.post(docId, data)       // POST /api/documents/:id/comments
+Comments.update(id, content)     // PATCH /api/comments/:id
+Comments.delete(id)              // DELETE /api/comments/:id
+Comments.like(id)                // POST /api/comments/:id/like
+Comments.unlike(id)              // DELETE /api/comments/:id/like
+
+Search.query(params)             // GET /api/search?...
+
+Users.get(id)                    // GET /api/users/:id
+Users.documents(id, params)      // GET /api/users/:id/documents
+
+Leaderboard.users(params)        // GET /api/leaderboard/users
+Leaderboard.schools(params)      // GET /api/leaderboard/schools
+
+Reports.create(data)             // POST /api/reports
+
+Suggestions.list(params)         // GET /api/suggestions?...
+Suggestions.get(id)              // GET /api/suggestions/:id
+Suggestions.create(data)         // POST /api/suggestions
+Suggestions.vote(id)             // POST /api/suggestions/:id/vote
+Suggestions.removeVote(id)       // DELETE /api/suggestions/:id/vote
+Suggestions.delete(id)           // DELETE /api/suggestions/:id
+
+Admin.stats()                    // GET /api/admin/stats
+Admin.reports(params)            // GET /api/admin/reports
+Admin.updateReport(id, data)     // PATCH /api/admin/reports/:id
+Admin.updateDocument(id, data)   // PATCH /api/admin/documents/:id
+Admin.deleteDocument(id)         // DELETE /api/admin/documents/:id
+Admin.deleteComment(id)          // DELETE /api/admin/comments/:id
+Admin.updateUser(id, data)       // PATCH /api/admin/users/:id
+Admin.updateSuggestion(id, data) // PATCH /api/admin/suggestions/:id
+```
+
+### Upload en deux étapes — `uploadFile(file, onProgress)`
+
+Le fichier ne passe jamais par le serveur :
+```
+1. POST /api/documents/upload-url  → reçoit { upload_url, storage_key }
+2. PUT upload_url (XMLHttpRequest)  → upload direct vers B2/Wasabi
+   onProgress(pct) appelé pendant l'envoi pour la barre de progression
+3. Retourne storage_key à utiliser dans Documents.create()
+```
+
+`XMLHttpRequest` est utilisé à la place de `fetch` car il expose
+`upload.onprogress` — `fetch` ne supporte pas le suivi de progression.
+
+---
+
+## `js/auth.js` — état utilisateur
+
+### Variable globale `currentUser`
+```js
+// null si non connecté
+// { id, username, email, points, is_admin, created_at } si connecté
+let currentUser = null;
+```
+
+### `initAuth(options)` — à appeler en premier sur chaque page
+```js
+await initAuth()
+// options disponibles :
+await initAuth({ redirectIfAuth: true })    // login.html, register.html
+await initAuth({ redirectIfNoAuth: true })  // upload.html, profile.html
+```
+
+Appelle `GET /api/auth/me` — si le cookie est valide, remplit
+`currentUser` et met à jour la navbar. Sinon `currentUser = null`.
+
+### Navbar automatique
+
+Les attributs HTML `data-auth`, `data-noauth`, `data-admin` sur
+n'importe quel élément sont gérés automatiquement par `updateNavbar()` :
+```html
+<div data-auth>   Visible seulement si connecté      </div>
+<div data-noauth> Visible seulement si non connecté  </div>
+<div data-admin>  Visible seulement si admin          </div>
+```
+
+### Helpers globaux disponibles dans toutes les pages
+```js
+logout()                    // déconnecte et redirige vers login.html
+showToast(message, type)    // notification temporaire bas de page
+                            // type: 'success' (défaut) ou 'error'
+formatDate(isoString)       // "2024-01-15T..." → "15 jan. 2024"
+formatSize(bytes)           // 204800 → "200 Ko"
+getInitials(username)       // "alice_martin" → "AM"
+renderStars(rating)         // 4.2 → "★★★★☆"
+escapeHtml(str)             // protection XSS sur toutes les données
+                            // venant du serveur
+```
+
+---
+
+## Pages — détail
+
+### `index.html` + `pages/index.js`
+
+Page d'accueil publique — accessible sans être connecté.
+
+**Fonctionnement :**
+- État centralisé dans l'objet `filters` — quand un filtre change,
+  on met à jour `filters` et on rappelle `loadDocuments()`
+- Debounce de 400ms sur la recherche texte — évite une requête
+  par lettre tapée
+- Délégation d'événement sur les pills de type — un seul listener
+  sur le conteneur parent
+- Navigation vers `document.html?id=X` au clic sur une carte
+
+**Filtres disponibles :**
+
+| Filtre     | Élément HTML       | Param backend  |
+|------------|--------------------|----------------|
+| Texte      | `#filter-search`   | `q`            |
+| École      | `#filter-school`   | `school_id`    |
+| Matière    | `#filter-subject`  | `subject_id`   |
+| Année      | `#filter-year`     | `year`         |
+| Type       | `.pill[data-type]` | `type`         |
+
+---
+
+### `login.html` + `pages/login.js`
+
+Redirige vers `index.html` si déjà connecté (`redirectIfAuth: true`).
+
+- Champ `identifier` accepte username **ou** email
+- Le backend détecte automatiquement selon la présence du `@`
+- Validation côté client avant envoi (évite des allers-retours inutiles)
+- Comparaison du hash en temps constant côté serveur (timing attack)
+- Messages d'erreur volontairement génériques (évite l'énumération)
+
+**Helpers définis ici et réutilisés dans register.js et upload.js :**
+```js
+showFieldError(fieldId, message)  // erreur rouge sous un champ
+showFormAlert(message, type)      // alerte globale au-dessus du bouton
+clearErrors()                     // remet tous les champs en état normal
+setLoading(btn, loading, text)    // désactive le bouton pendant la requête
+bindPasswordToggle(inputId, ...)  // toggle visibilité mot de passe
+```
+
+---
+
+### `register.html` + `pages/register.js`
+
+Redirige vers `index.html` si déjà connecté.
+
+- Email **optionnel** — mentionné explicitement dans le formulaire
+  avec une note de confidentialité
+- Indicateur de force du mot de passe en temps réel (score 0→4)
+  basé sur : longueur ≥ 8, longueur ≥ 12, majuscule, chiffre,
+  caractère spécial
+- Confirmation mot de passe vérifiée côté client avant envoi
+
+---
+
+### `document.html` + `pages/document.js`
+
+Récupère `?id=X` depuis l'URL via `URLSearchParams`.
+
+**Flux téléchargement :**
+```
+1. Clic sur "Télécharger"
+2. GET /api/documents/:id/download-url → { download_url }
+3. window.open(download_url, '_blank')
+4. Le navigateur déclenche le téléchargement depuis B2 directement
+5. download_count incrémenté côté serveur
+6. +1 pt à l'auteur côté serveur
+```
+
+**Commentaires — arbre récursif :**
+- Chargé en une seule requête SQL triée par `created_at ASC`
+- Arbre reconstruit côté serveur, envoyé tel quel
+- `renderComment()` est récursive — s'appelle elle-même pour `replies`
+- Profondeur infinie, indentation visuelle limitée à 3 niveaux
+- Soft delete côté serveur — noeud conservé, contenu remplacé
+  par `[supprimé]` pour ne pas casser les threads enfants
+- Délégation d'événement sur `#comments-list` — un seul listener
+  pour like / répondre / supprimer (les éléments sont recréés
+  après chaque action)
+
+**Votes étoiles :**
+- 5 boutons `.star` avec `data-value="1"` à `data-value="5"`
+- `mouseenter` colorie les étoiles jusqu'à celle survolée
+- `mouseleave` remet l'état actif
+- Clic → `POST /api/documents/:id/vote` + recalcul moyenne affiché
+
+---
+
+### `upload.html` + `pages/upload.js`
+
+Redirige vers `login.html` si non connecté (`redirectIfNoAuth: true`).
+
+**Flux upload :**
+```
+1. Utilisateur choisit un fichier (clic ou drag & drop)
+2. Validation taille ≤ 50 Mo côté client
+3. Pré-remplissage automatique du titre depuis le nom de fichier
+   "exam_maths_2023.pdf" → "exam maths 2023"
+4. Submit → uploadFile(file, onProgress)
+   a. POST /api/documents/upload-url → { upload_url, storage_key }
+   b. PUT upload_url via XMLHttpRequest (suivi progression)
+   c. onProgress(pct) met à jour la barre en temps réel
+5. POST /api/documents avec storage_key + métadonnées
+6. Redirection vers document.html?id=X après 1 seconde
+```
+
+**Drag & drop :**
+- `dragover` doit appeler `e.preventDefault()` pour autoriser le drop
+- `dragleave` retire la classe `.drag-over`
+- `drop` récupère `e.dataTransfer.files[0]`
+
+**Bouton submit désactivé** tant que fichier + titre + type ne sont
+pas tous remplis. Mis à jour à chaque changement via `updateSubmitState()`.
+
+**Select matière dépend du select école** — chargé dynamiquement
+via `GET /api/search?school_id=X`. Désactivé si aucune école
+n'est sélectionnée.
+
+---
+
+### `profile.html` + `pages/profile.js`
+
+- `profile.html` → propre profil (id = `currentUser.id`)
+- `profile.html?id=X` → profil public de l'user X
+
+**Différences selon le contexte :**
+
+| Élément                    | Propre profil | Profil autre user |
+|----------------------------|:-------------:|:-----------------:|
+| Onglet Favoris             | ✓             | ✗                 |
+| Bouton "Modifier le profil"| ✓             | ✗                 |
+| Bouton supprimer le compte | ✓             | ✗                 |
+
+**Onglets :**
+- `documents` — `GET /api/users/:id/documents`
+- `favorites` — `GET /api/documents/favorites`
+  (seulement sur son propre profil)
+
+**Modal édition :**
+- Fermeture au clic sur le backdrop (pas uniquement sur ✕)
+- Seuls les champs modifiés sont envoyés au serveur
+- Mise à jour locale de l'avatar et du username sans recharger
+- Suppression compte : double `confirm()` + redirection vers index
+
+**Badges :**
+- Map `BADGE_ICONS` associe un emoji à chaque nom de badge
+- Section cachée si aucun badge (`badges.length === 0`)
+
+---
+
+### `leaderboard.html` + `pages/leaderboard.js`
+
+Deux onglets — Contributeurs / Écoles.
+
+- La ligne de l'utilisateur connecté est surlignée
+  (classe `.is-me` + fond bleu léger)
+- Médailles 🥇🥈🥉 pour les 3 premiers
+- Clic sur une ligne utilisateur → `profile.html?id=X`
+
+---
+
+### `suggestions.html` + `pages/suggestions.js`
+
+Deux colonnes : liste à gauche, formulaire à droite (sticky).
+
+**Vote optimiste :** le compteur est mis à jour localement
+immédiatement (sans attendre la réponse serveur) pour une
+réactivité maximale.
+
+**Anti-spam côté serveur :** max 3 suggestions en statut `pending`
+par utilisateur simultanément. Le front affiche un message clair
+si cette limite est atteinte (`err.status === 429`).
+
+**Filtre par statut :**
+
+| Statut     | Badge couleur  | Description                        |
+|------------|----------------|------------------------------------|
+| `pending`  | Bleu           | En attente de traitement admin     |
+| `planned`  | Ambre          | Validée, sera implémentée          |
+| `done`     | Vert           | Implémentée                        |
+| `rejected` | Rouge          | Refusée                            |
+
+---
+
+### `admin.html` + `pages/admin.js`
+
+Accès restreint : vérifié côté serveur sur chaque route,
+et côté client dans `initAuth` pour rediriger proprement.
+
+**Dashboard stats (`GET /api/admin/stats`) :**
+
+| Stat                  | Description                              |
+|-----------------------|------------------------------------------|
+| `pending_reports`     | Signalements status `pending`            |
+| `pending_documents`   | Documents `is_approved = 0`              |
+| `pending_suggestions` | Suggestions status `pending`             |
+| `total_users`         | Utilisateurs actifs total                |
+| `total_documents`     | Documents approuvés total                |
+| `new_users_today`     | Inscriptions du jour                     |
+| `new_docs_today`      | Uploads du jour                          |
+
+Les cartes stats deviennent rouges (`.has-pending`) si la valeur > 0.
+
+**Onglets :**
+
+**Signalements** — liste les reports `pending`.
+Actions par ligne : Traité / Ignorer / Supprimer le doc ou commentaire.
+Après chaque action : rechargement du tab + rechargement des stats.
+
+**Documents** — affiche un message informatif.
+Les documents sont approuvés automatiquement à l'upload.
+La désapprobation se fait depuis la page de chaque document
+(bouton visible pour les admins).
+
+**Suggestions** — liste les suggestions `pending`.
+Actions : Planifier / Réalisée / Refuser → `PATCH /api/admin/suggestions/:id`.
+
+**Utilisateurs** — liste les 100 premiers par points.
+Action : Bannir → `PATCH /api/admin/users/:id { is_active: 0 }`.
+Protection : impossible de se bannir soi-même (vérification `currentUser.id`).
+Côté serveur : impossible de bannir un admin.
+
+---
+
+## Patterns récurrents
+
+### Délégation d'événement
+
+Au lieu d'attacher un listener sur chaque élément dynamique,
+on attache un seul listener sur le conteneur parent :
+```js
+container.addEventListener('click', (e) => {
+    const btn = e.target.closest('.mon-bouton');
+    if (!btn) return;
+    // agir sur btn
+});
+```
+
+Utilisé pour : cartes documents, boutons like/répondre/supprimer
+dans les commentaires, boutons de vote suggestions, actions admin.
+
+### Debounce sur la recherche
+
+Évite une requête par lettre tapée — attend 400ms d'inactivité :
+```js
+let timer;
+input.addEventListener('input', (e) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        // lancer la requête
+    }, 400);
+});
+```
+
+### Protection XSS
+
+Toute donnée venant du serveur est passée par `escapeHtml()`
+avant d'être injectée dans le DOM via `innerHTML` :
+```js
+el.innerHTML = `<span>${escapeHtml(data.username)}</span>`;
+```
+
+Exception : les données injectées via `.textContent` sont
+automatiquement échappées par le navigateur.
+
+### États de chargement
+
+Chaque section qui charge des données affiche trois états :
+```js
+// Chargement
+el.innerHTML = `<div class="state-loading">
+    <div class="spinner"></div>
+</div>`;
+
+// Vide
+el.innerHTML = `<div class="state-empty">
+    <span>Aucun résultat</span>
+</div>`;
+
+// Erreur
+el.innerHTML = `<div class="state-error">
+    <span>${escapeHtml(err.message)}</span>
+</div>`;
+```
+
+---
+
+## État d'avancement
+
+### Terminé
+- [x] `css/base.css` — design system complet
+- [x] `js/api.js` — toutes les routes API encapsulées
+- [x] `js/auth.js` — état session + helpers globaux
+- [x] `index.html` + `pages/index.js`
+- [x] `login.html` + `pages/login.js`
+- [x] `register.html` + `pages/register.js`
+- [x] `document.html` + `pages/document.js`
+- [x] `upload.html` + `pages/upload.js`
+- [x] `profile.html` + `pages/profile.js`
+- [x] `leaderboard.html` + `pages/leaderboard.js`
+- [x] `suggestions.html` + `pages/suggestions.js`
+- [x] `admin.html` + `pages/admin.js`
+
+### À faire
+- [ ] Responsive mobile — breakpoints CSS pour les petits écrans
+- [ ] Page 404 — `404.html` pour les URLs inconnues
+- [ ] Favicon et meta og: (partage réseaux sociaux)
+- [ ] Configuration nginx pour servir les fichiers statiques
+- [ ] Variables d'environnement — script pour switcher
+      `data-api` entre dev et prod automatiquement

@@ -1,0 +1,273 @@
+<!-- upload.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploader — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">← Retour</a>
+                <a href="profile.html" class="navbar-link"
+                   data-auth id="nav-username">Mon profil</a>
+                <a href="admin.html" class="navbar-link" data-admin>Admin</a>
+                <button class="btn btn-secondary btn-sm"
+                        data-auth onclick="logout()">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="upload-layout">
+
+                <!-- COLONNE GAUCHE — formulaire -->
+                <div class="upload-form-col">
+
+                    <div style="margin-bottom:var(--space-6)">
+                        <h2>Partager un document</h2>
+                        <p class="text-muted" style="margin-top:4px">
+                            Tu gagnes 10 points à l'upload,
+                            +1 point par téléchargement reçu.
+                        </p>
+                    </div>
+
+                    <form id="upload-form" novalidate>
+
+                        <!-- ZONE DE DÉPÔT FICHIER
+                             L'input type="file" natif est caché —
+                             on le déclenche via un clic sur la zone stylée -->
+                        <div class="drop-zone" id="drop-zone">
+                            <input
+                                type="file"
+                                id="file-input"
+                                accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg"
+                                style="display:none"
+                            >
+                            <!-- Icône upload SVG inline -->
+                            <svg class="drop-icon" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor"
+                                 stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0
+                                         01-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <p class="drop-label">
+                                Glisse ton fichier ici ou
+                                <span class="link">clique pour choisir</span>
+                            </p>
+                            <p class="text-muted text-sm">
+                                PDF, Word, PowerPoint, images — max 50 Mo
+                            </p>
+                        </div>
+
+                        <!-- Aperçu du fichier sélectionné — caché par défaut -->
+                        <div class="file-preview" id="file-preview"
+                             style="display:none">
+                            <div class="file-preview-icon">
+                                <svg viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.5">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0
+                                             002 2h12a2 2 0 002-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                            </div>
+                            <div class="file-preview-info">
+                                <span class="file-preview-name"
+                                      id="preview-name"></span>
+                                <span class="text-muted text-sm"
+                                      id="preview-size"></span>
+                            </div>
+                            <!-- Bouton pour changer le fichier -->
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    id="btn-change-file">
+                                Changer
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="title">
+                                Titre du document
+                            </label>
+                            <input
+                                type="text"
+                                id="title"
+                                class="form-input"
+                                placeholder="Ex : Examen final maths 2023"
+                                required
+                            >
+                            <span class="form-error" id="title-error"></span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="doc-type">
+                                    Type
+                                </label>
+                                <select id="doc-type" class="form-select"
+                                        required>
+                                    <option value="">Choisir…</option>
+                                    <option value="exam">Examen</option>
+                                    <option value="td">TD</option>
+                                    <option value="cours">Cours</option>
+                                    <option value="tp">TP</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                                <span class="form-error"
+                                      id="type-error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="doc-year">
+                                    Année
+                                    <span class="badge-optional">
+                                        optionnel
+                                    </span>
+                                </label>
+                                <select id="doc-year" class="form-select">
+                                    <option value="">Année…</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="doc-school">
+                                    École
+                                    <span class="badge-optional">
+                                        optionnel
+                                    </span>
+                                </label>
+                                <select id="doc-school" class="form-select">
+                                    <option value="">Choisir…</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="doc-subject">
+                                    Matière
+                                    <span class="badge-optional">
+                                        optionnel
+                                    </span>
+                                </label>
+                                <select id="doc-subject" class="form-select"
+                                        disabled>
+                                    <option value="">
+                                        Choisir une école d'abord
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="description">
+                                Description
+                                <span class="badge-optional">optionnel</span>
+                            </label>
+                            <textarea
+                                id="description"
+                                class="form-textarea"
+                                placeholder="Décris le contenu : année de cours, corrigé inclus, professeur…"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-alert" id="form-alert"></div>
+
+                        <!-- BARRE DE PROGRESSION — cachée avant l'upload -->
+                        <div class="progress-wrap" id="progress-wrap"
+                             style="display:none">
+                            <div class="progress-header">
+                                <span class="text-sm"
+                                      id="progress-label">
+                                    Upload en cours…
+                                </span>
+                                <span class="text-sm font-medium"
+                                      id="progress-pct">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill"
+                                     id="progress-fill"></div>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary btn-full"
+                                id="submit-btn"
+                                disabled>
+                            Uploader le document
+                        </button>
+
+                    </form>
+                </div>
+
+                <!-- COLONNE DROITE — conseils -->
+                <aside class="upload-tips-col">
+
+                    <div class="card">
+                        <p class="sidebar-title">Conseils</p>
+                        <ul class="tips-list">
+                            <li>Choisis un titre clair qui décrit
+                                le contenu</li>
+                            <li>Précise l'année pour aider les
+                                étudiants à trouver</li>
+                            <li>Un corrigé inclus ? Mentionne-le
+                                dans la description</li>
+                            <li>Les documents approuvés par la
+                                communauté remontent en priorité</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <p class="sidebar-title">Formats acceptés</p>
+                        <div class="formats-grid">
+                            <span class="format-pill">PDF</span>
+                            <span class="format-pill">Word</span>
+                            <span class="format-pill">PowerPoint</span>
+                            <span class="format-pill">Images</span>
+                        </div>
+                        <p class="text-muted text-sm"
+                           style="margin-top:var(--space-3)">
+                            Taille max : 50 Mo
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <p class="sidebar-title">Points gagnés</p>
+                        <div class="points-table">
+                            <div class="points-row">
+                                <span>Upload</span>
+                                <span class="points-val">+10 pts</span>
+                            </div>
+                            <div class="points-row">
+                                <span>Par téléchargement reçu</span>
+                                <span class="points-val">+1 pt</span>
+                            </div>
+                            <div class="points-row">
+                                <span>Par commentaire posté</span>
+                                <span class="points-val">+2 pts</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/upload.js"></script>
+
+</body>
+</html>

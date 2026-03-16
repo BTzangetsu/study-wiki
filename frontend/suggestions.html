@@ -1,0 +1,154 @@
+<!-- suggestions.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suggestions — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">Documents</a>
+                <a href="leaderboard.html" class="navbar-link">Classements</a>
+                <a href="suggestions.html" class="navbar-link active">
+                    Suggestions
+                </a>
+                <a href="profile.html" class="navbar-link" data-auth
+                   id="nav-username">Mon profil</a>
+                <a href="admin.html" class="navbar-link" data-admin>Admin</a>
+                <a href="upload.html" data-auth>
+                    <button class="btn btn-primary btn-sm">Uploader</button>
+                </a>
+                <div class="flex gap-2" data-noauth>
+                    <a href="login.html">
+                        <button class="btn btn-secondary btn-sm">
+                            Connexion
+                        </button>
+                    </a>
+                    <a href="register.html">
+                        <button class="btn btn-primary btn-sm">
+                            S'inscrire
+                        </button>
+                    </a>
+                </div>
+                <button class="btn btn-secondary btn-sm"
+                        data-auth onclick="logout()">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+
+            <div class="suggestions-layout">
+
+                <!-- COLONNE GAUCHE — liste -->
+                <div>
+                    <div class="page-hero">
+                        <h2>Suggestions</h2>
+                        <p class="text-muted">
+                            Propose des améliorations et vote pour
+                            celles que tu trouves utiles.
+                        </p>
+                    </div>
+
+                    <!-- Filtre par statut -->
+                    <div class="type-pills" id="status-pills"
+                         style="margin-bottom:var(--space-5)">
+                        <button class="pill active"
+                                data-status="pending">
+                            En attente
+                        </button>
+                        <button class="pill" data-status="planned">
+                            Planifiées
+                        </button>
+                        <button class="pill" data-status="done">
+                            Réalisées
+                        </button>
+                        <button class="pill" data-status="rejected">
+                            Refusées
+                        </button>
+                    </div>
+
+                    <div id="sug-state"></div>
+                    <div id="sug-list"></div>
+
+                </div>
+
+                <!-- COLONNE DROITE — formulaire -->
+                <aside class="suggestions-aside">
+
+                    <!-- Formulaire — visible si connecté -->
+                    <div class="card" data-auth>
+                        <p class="sidebar-title">
+                            Proposer une amélioration
+                        </p>
+                        <form id="sug-form" novalidate>
+                            <div class="form-group">
+                                <label class="form-label" for="sug-title">
+                                    Titre
+                                </label>
+                                <input type="text" id="sug-title"
+                                       class="form-input"
+                                       placeholder="En une phrase…"
+                                       maxlength="200">
+                                <span class="form-error"
+                                      id="sug-title-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"
+                                       for="sug-description">
+                                    Description
+                                </label>
+                                <textarea id="sug-description"
+                                          class="form-textarea"
+                                          placeholder="Décris l'amélioration en détail…"
+                                          rows="4"
+                                          maxlength="2000"></textarea>
+                                <span class="form-error"
+                                      id="sug-desc-error"></span>
+                            </div>
+                            <div class="form-alert" id="sug-alert"></div>
+                            <button type="submit"
+                                    class="btn btn-primary btn-full"
+                                    id="sug-submit">
+                                Proposer
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Message si non connecté -->
+                    <div class="card" data-noauth>
+                        <p class="sidebar-title">
+                            Une idée d'amélioration ?
+                        </p>
+                        <p class="text-muted"
+                           style="margin-bottom:var(--space-3);
+                                  font-size:13px;line-height:1.5">
+                            Connecte-toi pour proposer et voter.
+                        </p>
+                        <a href="login.html">
+                            <button class="btn btn-primary btn-full">
+                                Se connecter
+                            </button>
+                        </a>
+                    </div>
+
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/suggestions.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- viewport est critique pour le responsive :
+         width=device-width → la page prend la largeur de l'écran
+         initial-scale=1.0  → pas de zoom par défaut sur mobile -->
+    <title>Annales.io — Partage d'annales étudiantes</title>
+    <link rel="stylesheet" href="css/base.css">
+    <!-- On charge les scripts en bas de body (pas ici dans le head)
+         pour ne pas bloquer le rendu de la page -->
+</head>
+
+<!-- data-api pointe vers le backend.
+     api.js lit cette valeur via document.body.dataset.api
+     Changer cette valeur = changer l'URL du backend pour toutes les pages -->
+<body data-api="http://localhost:8080">
+
+    <!-- ============================================================
+         NAVBAR
+         data-auth   : visible seulement si connecté (géré par auth.js)
+         data-noauth : visible seulement si non connecté
+         data-admin  : visible seulement si admin
+         ============================================================ -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+
+            <!-- Logo -->
+            <a href="index.html" class="navbar-logo">
+                annales<span>.io</span>
+            </a>
+
+            <!-- Liens de navigation -->
+            <div class="navbar-links">
+                <a href="index.html"       class="navbar-link active">Documents</a>
+                <a href="leaderboard.html" class="navbar-link">Classements</a>
+                <a href="suggestions.html" class="navbar-link">Suggestions</a>
+
+                <!-- Visible seulement si connecté -->
+                <a href="profile.html" class="navbar-link" data-auth
+                   id="nav-username">Mon profil</a>
+
+                <!-- Visible seulement si admin -->
+                <a href="admin.html" class="navbar-link" data-admin>
+                    Admin
+                </a>
+
+                <!-- Visible seulement si connecté -->
+                <a href="upload.html" data-auth>
+                    <button class="btn btn-primary btn-sm">
+                        Uploader
+                    </button>
+                </a>
+
+                <!-- Visible seulement si non connecté -->
+                <div class="flex gap-2" data-noauth>
+                    <a href="login.html">
+                        <button class="btn btn-secondary btn-sm">
+                            Connexion
+                        </button>
+                    </a>
+                    <a href="register.html">
+                        <button class="btn btn-primary btn-sm">
+                            S'inscrire
+                        </button>
+                    </a>
+                </div>
+
+                <!-- Bouton déconnexion — visible seulement si connecté -->
+                <button class="btn btn-secondary btn-sm"
+                        data-auth
+                        onclick="logout()">
+                    Déconnexion
+                </button>
+            </div>
+
+        </div>
+    </nav>
+
+    <!-- ============================================================
+         CONTENU PRINCIPAL
+         <main> est une balise sémantique — indique aux moteurs
+         de recherche et aux lecteurs d'écran où est le contenu
+         principal de la page.
+         ============================================================ -->
+    <main>
+        <div class="container">
+
+            <!-- HERO — section d'introduction -->
+            <section class="hero">
+                <!-- Le label bleu en pill au-dessus du titre -->
+                <span class="badge badge-blue">Plateforme étudiante</span>
+                <h1>Retrouve tes annales,<br>aide les prochaines promo.</h1>
+                <p class="text-muted" style="max-width:480px; margin-top:8px">
+                    Des milliers de sujets d'examens, TD et cours
+                    partagés entre étudiants.
+                </p>
+            </section>
+
+            <!-- BARRE DE FILTRES -->
+            <section class="filters-bar">
+
+                <!-- Barre de recherche texte -->
+                <input
+                    type="text"
+                    id="filter-search"
+                    class="form-input"
+                    placeholder="Rechercher un sujet, une matière…"
+                    style="max-width:300px"
+                >
+
+                <!-- Select école — les options sont remplies par JS -->
+                <select id="filter-school" class="form-select"
+                        style="width:auto">
+                    <option value="">Toutes les écoles</option>
+                </select>
+
+                <!-- Select matière — les options sont remplies par JS -->
+                <select id="filter-subject" class="form-select"
+                        style="width:auto">
+                    <option value="">Toutes les matières</option>
+                </select>
+
+                <!-- Select année — JS remplit de 2015 à l'année courante -->
+                <select id="filter-year" class="form-select"
+                        style="width:auto">
+                    <option value="">Année</option>
+                </select>
+
+                <!-- Boutons pills pour filtrer par type -->
+                <!-- data-type est lu par JS pour construire le filtre -->
+                <div class="type-pills" id="type-pills">
+                    <button class="pill active" data-type="">Tout</button>
+                    <button class="pill" data-type="exam">Exam</button>
+                    <button class="pill" data-type="td">TD</button>
+                    <button class="pill" data-type="cours">Cours</button>
+                    <button class="pill" data-type="tp">TP</button>
+                </div>
+
+            </section>
+
+            <!-- LAYOUT PRINCIPAL : colonne gauche + sidebar droite -->
+            <!-- grid-template-columns définit les colonnes :
+                 minmax(0, 1fr) → colonne flexible qui peut rétrécir à 0
+                 240px          → sidebar de largeur fixe -->
+            <div class="page-layout">
+
+                <!-- LISTE DES DOCUMENTS -->
+                <div>
+                    <!-- Zone de chargement/erreur/vide — gérée par JS -->
+                    <div id="docs-state"></div>
+
+                    <!-- Les cartes de documents sont injectées ici par JS -->
+                    <div id="docs-list"></div>
+
+                    <!-- Pagination -->
+                    <div class="pagination" id="pagination"></div>
+                </div>
+
+                <!-- SIDEBAR DROITE -->
+                <aside class="sidebar">
+
+                    <!-- Top contributeurs -->
+                    <div class="card">
+                        <p class="sidebar-title">Top contributeurs</p>
+                        <!-- Rempli par JS -->
+                        <div id="top-users"></div>
+                    </div>
+
+                    <!-- Stats globales -->
+                    <div class="card">
+                        <p class="sidebar-title">Stats globales</p>
+                        <div id="global-stats"></div>
+                    </div>
+
+                    <!-- CTA upload — visible seulement si connecté -->
+                    <div class="card" data-auth>
+                        <p class="sidebar-title">Tu as un document ?</p>
+                        <p class="text-muted" style="margin-bottom:12px;line-height:1.5">
+                            Partage-le et gagne des points pour chaque
+                            téléchargement.
+                        </p>
+                        <a href="upload.html">
+                            <button class="btn btn-primary btn-full">
+                                Uploader un document
+                            </button>
+                        </a>
+                    </div>
+
+                    <!-- CTA inscription — visible seulement si non connecté -->
+                    <div class="card" data-noauth>
+                        <p class="sidebar-title">Rejoins la communauté</p>
+                        <p class="text-muted" style="margin-bottom:12px;line-height:1.5">
+                            Inscris-toi pour télécharger et partager
+                            des documents.
+                        </p>
+                        <a href="register.html">
+                            <button class="btn btn-primary btn-full">
+                                S'inscrire gratuitement
+                            </button>
+                        </a>
+                    </div>
+
+                </aside>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ============================================================
+         SCRIPTS — chargés en bas de body pour ne pas bloquer
+         le rendu HTML. L'ordre est important :
+         1. api.js    — doit être chargé avant auth.js et index.js
+         2. auth.js   — doit être chargé avant index.js
+         3. index.js  — utilise les fonctions des deux précédents
+         ============================================================ -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/index.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!-- leaderboard.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classements — Annales.io</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+<body data-api="http://localhost:8080">
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="index.html" class="navbar-logo">annales<span>.io</span></a>
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">Documents</a>
+                <a href="leaderboard.html" class="navbar-link active">
+                    Classements
+                </a>
+                <a href="suggestions.html" class="navbar-link">Suggestions</a>
+                <a href="profile.html" class="navbar-link" data-auth
+                   id="nav-username">Mon profil</a>
+                <a href="admin.html" class="navbar-link" data-admin>Admin</a>
+                <a href="upload.html" data-auth>
+                    <button class="btn btn-primary btn-sm">Uploader</button>
+                </a>
+                <div class="flex gap-2" data-noauth>
+                    <a href="login.html">
+                        <button class="btn btn-secondary btn-sm">
+                            Connexion
+                        </button>
+                    </a>
+                    <a href="register.html">
+                        <button class="btn btn-primary btn-sm">
+                            S'inscrire
+                        </button>
+                    </a>
+                </div>
+                <button class="btn btn-secondary btn-sm"
+                        data-auth onclick="logout()">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+
+            <div class="page-hero">
+                <h2>Classements</h2>
+                <p class="text-muted">
+                    Les étudiants et écoles qui contribuent le plus
+                    à la communauté.
+                </p>
+            </div>
+
+            <!-- ONGLETS -->
+            <div class="profile-tabs">
+                <button class="profile-tab active" data-tab="users">
+                    Contributeurs
+                </button>
+                <button class="profile-tab" data-tab="schools">
+                    Écoles
+                </button>
+            </div>
+
+            <div id="lb-state"></div>
+            <div id="lb-content"></div>
+
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pages/leaderboard.js"></script>
+
+</body>
+</html>
