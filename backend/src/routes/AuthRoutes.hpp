@@ -30,7 +30,7 @@ public:
                 return crow::response(400, R"({"error":"Missing fields"})");
 
             std::string username = body["username"].s();
-            std::string email    = body.has("email") ? body["email"].s() : "";
+            std::string email = body.has("email") ? std::string(body["email"].s()) : std::string("");
             std::string password = body["password"].s();
 
             if (username.size() < 3)

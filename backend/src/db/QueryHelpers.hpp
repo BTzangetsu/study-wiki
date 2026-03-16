@@ -65,7 +65,7 @@ inline Rows QueryRows(MYSQL* conn,
         const size_t BUF = 2048;
         std::vector<std::vector<char>> bufs(cols, std::vector<char>(BUF));
         std::vector<unsigned long>     out_len(cols, 0);
-        std::vector<bool>           is_null(cols, false);
+        std::vector<char>           is_null(cols, 0);
         std::vector<MYSQL_BIND>        out_bind(cols);
         memset(out_bind.data(), 0, sizeof(MYSQL_BIND) * cols);
 
