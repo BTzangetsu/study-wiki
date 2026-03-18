@@ -40,7 +40,7 @@ public:
                     R"({"error":"Provide only one of document_id or comment_id"})");
 
             std::string reason  = json_str(body, "reason");
-            std::string details = json_str(body, "details",); // details is optional
+            std::string details = json_str(body, "details"); // details is optional
 
             // Validation de la raison
             static const std::vector<std::string> valid_reasons = {
