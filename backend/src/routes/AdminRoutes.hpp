@@ -135,7 +135,7 @@ public:
             if (!body || !body.has("status"))
                 return crow::response(400, R"({"error":"Missing status"})");
 
-            std::string status = body["status"].s();
+            std::string status = json_str(body, "status");
             static const std::vector<std::string> valid = {
                 "planned", "done", "rejected", "pending"
             };
@@ -167,7 +167,7 @@ public:
             if (!body || !body.has("status"))
                 return crow::response(400, R"({"error":"Missing status"})");
 
-            std::string status = body["status"].s();
+            std::string status = json_str(body, "status");
             if (status != "reviewed" && status != "dismissed")
                 return crow::response(400, R"({"error":"Invalid status"})");
 

@@ -256,7 +256,7 @@ public:
             if (!body || !body.has("filename") || !body.has("size_bytes"))
                 return crow::response(400, R"({"error":"Missing filename or size_bytes"})");
 
-            std::string filename   = body["filename"].s();
+            std::string filename   = json_str(body, "filename");
             long long   size_bytes = body["size_bytes"].i();
 
             // 50 Mo max
@@ -300,11 +300,11 @@ public:
                 !body.has("type"))
                 return crow::response(400, R"({"error":"Missing required fields"})");
 
-            std::string storage_key = body["storage_key"].s();
-            std::string title       = body["title"].s();
-            std::string description = body.has("description") ? body["description"].s() : "";
+            std::string storage_key = json_str(body, "storage_key");
+            std::string title       = json_str(body, "title");
+            std::string description = json_str(body, "description");
             std::string year        = body.has("year") ? std::to_string(body["year"].i()) : "";
-            std::string type        = body["type"].s();
+            std::string type        = json_str(body, "type");
             std::string subject_id  = body.has("subject_id") ? std::to_string(body["subject_id"].i()) : "";
             std::string school_id   = body.has("school_id")  ? std::to_string(body["school_id"].i())  : "";
             std::string size_bytes  = body.has("size_bytes") ? std::to_string(body["size_bytes"].i())  : "0";
@@ -429,12 +429,12 @@ public:
                 if (body.has("title"))
                     Execute(db.get(),
                         "UPDATE documents SET title = ? WHERE id = ?",
-                        {body["title"].s(), std::to_string(id)});
+                        {json_str(body, "title"), std::to_string(id)});
 
                 if (body.has("description"))
                     Execute(db.get(),
                         "UPDATE documents SET description = ? WHERE id = ?",
-                        {body["description"].s(), std::to_string(id)});
+                        {json_str(body, "description"), std::to_string(id)});
 
                 return crow::response(200, R"({"message":"Updated"})");
 

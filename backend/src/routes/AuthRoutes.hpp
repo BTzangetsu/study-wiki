@@ -30,8 +30,8 @@ public:
                 return crow::response(400, R"({"error":"Missing fields"})");
 
             std::string username = body["username"].s();
-            std::string email = body.has("email") ? std::string(body["email"].s()) : std::string("");
-            std::string password = body["password"].s();
+            std::string email = json_str(body, "email");
+            std::string password = json_str(body, "password");
 
             if (username.size() < 3)
                 return crow::response(400, R"({"error":"Username too short"})");
@@ -101,8 +101,8 @@ public:
             if (!body || !body.has("identifier") || !body.has("password"))
                 return crow::response(400, R"({"error":"Missing fields"})");
 
-            std::string identifier = body["identifier"].s();
-            std::string password   = body["password"].s();
+            std::string identifier = json_str(body, "identifier");
+            std::string password   = json_str(body, "password");
 
             // Détecte si c'est un email (contient @) ou un username
             std::string query;
@@ -250,7 +250,7 @@ public:
                 auto db = pool.Acquire();
 
                 if (body.has("username")) {
-                    std::string nu = body["username"].s();
+                    std::string nu = json_str(body, "username");
                     if (nu.size() < 3)
                         return crow::response(400,
                             R"({"error":"Username too short"})");
@@ -266,7 +266,7 @@ public:
                 }
 
                 if (body.has("password")) {
-                    std::string np = body["password"].s();
+                    std::string np = json_str(body, "password");
                     if (np.size() < 8)
                         return crow::response(400,
                             R"({"error":"Password too short"})");

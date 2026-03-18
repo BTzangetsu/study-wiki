@@ -65,7 +65,7 @@ inline Rows QueryRows(MYSQL* conn,
         const size_t BUF = 2048;
         std::vector<std::vector<char>> bufs(cols, std::vector<char>(BUF));
         std::vector<unsigned long>     out_len(cols, 0);
-        std::vector<char>           is_null(cols, 0);
+        std::unique_ptr<bool[]> is_null(new bool[cols]());
         std::vector<MYSQL_BIND>        out_bind(cols);
         memset(out_bind.data(), 0, sizeof(MYSQL_BIND) * cols);
 
@@ -154,4 +154,16 @@ inline std::string ExtractSessionToken(const std::string& cookie_header) {
     auto end = token.find(';');
     if (end != std::string::npos) token = token.substr(0, end);
     return token;
+}
+
+// ================================================================
+// Helper : extraction d'une chaîne JSON paramétrable avec valeur par défaut
+// ================================================================
+
+
+inline std::string json_str(const crow::json::rvalue& body,
+                             const std::string& key,
+                             const std::string& def = "")
+{
+    return body.has(key) ? std::string(body[key].s()) : def;
 }

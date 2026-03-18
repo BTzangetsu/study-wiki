@@ -123,8 +123,8 @@ public:
                 return crow::response(400,
                     R"({"error":"Missing title or description"})");
 
-            std::string title       = body["title"].s();
-            std::string description = body["description"].s();
+            std::string title       = json_str(body, "title");
+            std::string description = json_str(body, "description");
 
             if (title.empty() || title.size() > 200)
                 return crow::response(400,

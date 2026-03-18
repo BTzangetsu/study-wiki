@@ -1,6 +1,8 @@
 // services/GamificationService.hpp
 #pragma once
 
+#include <unordered_set>
+
 #include "../db/ConnectionPool.hpp"
 #include "../db/QueryHelpers.hpp"
 
