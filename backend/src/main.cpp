@@ -32,9 +32,9 @@ int main() {
 
     DBConfig db_cfg {
         cfg.Get("DB_HOST",     "127.0.0.1"),
-        cfg.Get("DB_USER",     "annales"),
-        cfg.Get("DB_PASS",     ""),
-        cfg.Get("DB_NAME",     "annales_db"),
+        cfg.Get("DB_USER",     "study_wiki"),
+        cfg.Get("DB_PASS",     "study_wiki_pwd"),
+        cfg.Get("DB_NAME",     "study_wiki_db"),
         static_cast<unsigned int>(cfg.GetInt("DB_PORT", 3306))
     };
     ConnectionPool pool(db_cfg, cfg.GetInt("DB_POOL_SIZE", 10));
