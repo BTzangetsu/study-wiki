@@ -53,6 +53,8 @@
                     <div class="form-group">
                         <label class="form-label" for="email">
                             Adresse email
+                            <!-- Badge optionnel inline -->
+                            <span class="badge-optional">optionnel</span>
                         </label>
                         <input
                             type="email"
@@ -61,8 +63,11 @@
                             class="form-input"
                             placeholder="ton@email.fr"
                             autocomplete="email"
-                            required
                         >
+                        <span class="form-hint">
+                            Uniquement pour récupérer ton compte si tu oublies
+                            ton mot de passe. Jamais partagé ni utilisé autrement.
+                        </span>
                         <span class="form-error" id="email-error"></span>
                     </div>
 
@@ -106,24 +111,22 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="email">
-                            Adresse email
-                            <!-- Badge optionnel inline -->
-                            <span class="badge-optional">optionnel</span>
+                        <label class="form-label" for="confirm-password">
+                            Confirmer le mot de passe
                         </label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            class="form-input"
-                            placeholder="ton@email.fr"
-                            autocomplete="email"
-                        >
-                        <span class="form-hint">
-                            Uniquement pour récupérer ton compte si tu oublies
-                            ton mot de passe. Jamais partagé ni utilisé autrement.
-                        </span>
-                        <span class="form-error" id="email-error"></span>
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="confirm-password"
+                                name="confirm-password"
+                                class="form-input"
+                                placeholder="••••••••"
+                                autocomplete="new-password"
+                                required
+                            >
+                        </div>
+                        <span class="form-error"
+                              id="confirm-password-error"></span>
                     </div>
 
                     <div class="form-alert" id="form-alert"></div>
