@@ -12,6 +12,7 @@ struct Session {
     int         user_id;
     std::string username;
     bool        is_admin;
+    bool        is_super_admin;
     std::chrono::system_clock::time_point expires_at;
 };
 
@@ -23,6 +24,7 @@ public:
     std::string CreateSession(int user_id,
                               const std::string& username,
                               bool is_admin = false,
+                              bool is_super_admin = false,
                               size_t duration_hours = 24)
     {
         std::string token = GenerateRandomToken();
@@ -30,6 +32,7 @@ public:
             user_id,
             username,
             is_admin,
+            is_super_admin,
             std::chrono::system_clock::now() +
                 std::chrono::hours(duration_hours)
         };

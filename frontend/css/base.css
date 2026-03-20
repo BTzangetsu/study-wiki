@@ -622,17 +622,241 @@ h4 { font-size: 15px; }
     border-color: var(--blue-600);
 }
 
-/* LAYOUT PRINCIPAL
-   CSS Grid avec deux colonnes.
-   minmax(0, 1fr) → colonne principale flexible
-   240px          → sidebar fixe */
+/* ============================================================
+   PANNEAU LATÉRAL — index.html
+   ============================================================ */
+
+/* Override du page-layout pour supporter le panneau.
+   On remplace la grille fixe par une grille dynamique
+   contrôlée par JS via les classes .no-panel / .with-panel */
 .page-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 240px;
+    grid-template-columns: minmax(0, 1fr) 0px;
     gap: var(--space-6);
     align-items: start;
-    /* align-items: start → la sidebar ne s'étire pas
-       pour remplir toute la hauteur de la colonne gauche */
+    transition: grid-template-columns 0.25s ease;
+}
+
+.page-layout.with-panel {
+    grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.list-col { min-width: 0; }
+
+/* PANNEAU */
+.detail-panel {
+    overflow: hidden;
+    /* sticky — reste visible en scrollant */
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-4));
+    max-height: calc(100vh - var(--nav-height) - var(--space-8));
+    border-radius: var(--radius-lg);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.page-layout.with-panel .detail-panel {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.detail-panel-inner {
+    background: var(--gray-0);
+    border: var(--border);
+    border-radius: var(--radius-lg);
+    height: 100%;
+    overflow-y: auto;
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.detail-panel-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    justify-content: space-between;
+}
+
+.panel-close-btn {
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: color var(--transition);
+}
+
+.panel-close-btn:hover { color: var(--gray-900); }
+
+.detail-panel-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+.detail-panel-stars {
+    font-size: 12px;
+    color: var(--amber-700);
+}
+
+.detail-panel-desc {
+    font-size: 13px;
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+.panel-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* Commentaires résumés dans le panneau */
+.panel-comment {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    margin-bottom: var(--space-3);
+}
+
+.panel-comment-body {
+    font-size: 12px;
+    color: var(--gray-600);
+    line-height: 1.5;
+}
+
+.panel-comment-user {
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+/* ============================================================
+   VIEWER OVERLAY
+   position: fixed → couvre toute la fenêtre
+   inset: 0 → top/right/bottom/left = 0
+   ============================================================ */
+.viewer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    padding: var(--space-4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.viewer-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.viewer-modal {
+    background: var(--gray-0);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 760px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.96);
+    transition: transform 0.2s ease;
+}
+
+.viewer-overlay.open .viewer-modal {
+    transform: scale(1);
+}
+
+.viewer-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-5);
+    border-bottom: var(--border);
+    flex-shrink: 0;
+}
+
+.viewer-modal-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 600px;
+}
+
+.viewer-close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--gray-400);
+    cursor: pointer;
+    padding: 2px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color var(--transition);
+}
+
+.viewer-close-btn:hover { color: var(--gray-900); }
+
+/* Zone d'affichage du contenu — prend tout l'espace dispo */
+.viewer-body {
+    flex: 1;
+    overflow: hidden;
+    background: var(--gray-50);
+    position: relative;
+}
+
+/* iframe PDF — pleine taille dans le viewer */
+.viewer-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    min-height: 500px;
+}
+
+/* Image dans le viewer */
+.viewer-body img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    margin: auto;
+    display: block;
+    padding: var(--space-4);
+}
+
+/* Message format non supporté */
+.viewer-unsupported {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: var(--space-3);
+    color: var(--gray-400);
+    font-size: 14px;
+}
+
+.viewer-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-5);
+    border-top: var(--border);
+    flex-shrink: 0;
 }
 
 /* CARTE DOCUMENT */

@@ -61,6 +61,7 @@ async function loadProfile() {
             showState('error', 'Erreur lors du chargement');
         }
     }
+    // if (isOwnProfile) bindAdminRequest();
 }
 
 // ============================================================
@@ -379,4 +380,116 @@ function showState(type, message = '') {
             <a href="index.html" class="link">← Retour</a>
         </div>`;
     }
+}
+
+// ============================================================
+// DEMANDE ADMIN — inactif tant que le HTML est commenté
+// ============================================================
+async function bindAdminRequest() {
+    const btn = document.getElementById('btn-request-admin');
+    if (!btn) return; // sortie silencieuse si HTML commenté
+
+    const statusEl = document.getElementById('admin-request-status');
+
+    // Vérifie si une demande existe déjà
+    try {
+        // On tente de soumettre une demande vide juste pour
+        // savoir si l'utilisateur en a déjà une en cours —
+        // on utilise plutôt GET /api/auth/me qui contient
+        // les infos nécessaires
+        if (currentUser.is_admin) {
+            btn.textContent  = 'Tu es déjà administrateur';
+            btn.disabled     = true;
+            return;
+        }
+    } catch (e) { /* silencieux */ }
+
+    btn.addEventListener('click', () => {
+        // Affiche le formulaire de raison inline
+        document.getElementById('admin-request-card').innerHTML = `
+            <p class="sidebar-title">Demande d'administration</p>
+            <p class="text-muted"
+               style="font-size:13px;line-height:1.5;
+                      margin-bottom:var(--space-3)">
+                Explique pourquoi tu souhaites devenir admin.
+                Minimum 20 caractères.
+            </p>
+            <div class="form-group">
+                <textarea id="admin-request-reason"
+                          class="form-textarea"
+                          placeholder="Je contribue régulièrement depuis X mois, j'aimerais aider à modérer les documents et signalements…"
+                          rows="4"
+                          maxlength="1000"></textarea>
+                <span class="form-error" id="admin-reason-error"></span>
+            </div>
+            <div class="form-alert" id="admin-request-alert"></div>
+            <div class="flex gap-2">
+                <button class="btn btn-primary"
+                        id="btn-submit-admin-request"
+                        style="flex:1">
+                    Envoyer la demande
+                </button>
+                <button class="btn btn-secondary"
+                        id="btn-cancel-admin-request">
+                    Annuler
+                </button>
+            </div>
+        `;
+
+        // Bouton annuler — recharge le profil
+        document.getElementById('btn-cancel-admin-request')
+            .addEventListener('click', () => loadProfile());
+
+        // Bouton soumettre
+        document.getElementById('btn-submit-admin-request')
+            .addEventListener('click', async () => {
+                const reason = document.getElementById(
+                    'admin-request-reason').value.trim();
+                const errEl  = document.getElementById(
+                    'admin-reason-error');
+                const alertEl = document.getElementById(
+                    'admin-request-alert');
+
+                if (reason.length < 20) {
+                    errEl.textContent =
+                        'Minimum 20 caractères';
+                    return;
+                }
+
+                const submitBtn = document.getElementById(
+                    'btn-submit-admin-request');
+                submitBtn.disabled    = true;
+                submitBtn.textContent = 'Envoi…';
+
+                try {
+                    await post('/api/admin-requests', { reason });
+
+                    // Remplace la carte par un message de succès
+                    document.getElementById('admin-request-card')
+                        .innerHTML = `
+                        <p class="sidebar-title">
+                            Demande envoyée
+                        </p>
+                        <p class="text-muted"
+                           style="font-size:13px;line-height:1.5">
+                            Ta demande a été transmise.
+                            Tu seras notifié de la décision
+                            par un administrateur.
+                        </p>
+                    `;
+
+                } catch (err) {
+                    if (err.status === 409) {
+                        alertEl.textContent =
+                            'Tu as déjà une demande en cours';
+                    } else {
+                        alertEl.textContent =
+                            err.message || 'Erreur';
+                    }
+                    alertEl.className = 'form-alert visible error';
+                    submitBtn.disabled    = false;
+                    submitBtn.textContent = 'Envoyer la demande';
+                }
+            });
+    });
 }

@@ -145,65 +145,103 @@
             <!-- grid-template-columns définit les colonnes :
                  minmax(0, 1fr) → colonne flexible qui peut rétrécir à 0
                  240px          → sidebar de largeur fixe -->
-            <div class="page-layout">
+            <!-- Remplacer la div .page-layout existante par ceci -->
+            <div class="page-layout" id="main-layout">
 
-                <!-- LISTE DES DOCUMENTS -->
-                <div>
-                    <!-- Zone de chargement/erreur/vide — gérée par JS -->
+                <!-- LISTE + PAGINATION -->
+                <div class="list-col">
                     <div id="docs-state"></div>
-
-                    <!-- Les cartes de documents sont injectées ici par JS -->
                     <div id="docs-list"></div>
-
-                    <!-- Pagination -->
                     <div class="pagination" id="pagination"></div>
                 </div>
 
-                <!-- SIDEBAR DROITE -->
-                <aside class="sidebar">
+                <!-- PANNEAU DÉTAIL — caché par défaut -->
+                <div class="detail-panel" id="detail-panel">
+                    <div class="detail-panel-inner" id="detail-panel-inner">
 
-                    <!-- Top contributeurs -->
-                    <div class="card">
-                        <p class="sidebar-title">Top contributeurs</p>
-                        <!-- Rempli par JS -->
-                        <div id="top-users"></div>
-                    </div>
+                        <div class="detail-panel-header">
+                            <h4 id="panel-title" class="truncate"></h4>
+                            <button class="panel-close-btn"
+                                    id="btn-close-panel"
+                                    aria-label="Fermer">✕</button>
+                        </div>
 
-                    <!-- Stats globales -->
-                    <div class="card">
-                        <p class="sidebar-title">Stats globales</p>
-                        <div id="global-stats"></div>
-                    </div>
+                        <div class="detail-panel-meta" id="panel-meta"></div>
+                        <div class="detail-panel-stars" id="panel-stars"></div>
+                        <div class="detail-panel-desc" id="panel-desc"></div>
 
-                    <!-- CTA upload — visible seulement si connecté -->
-                    <div class="card" data-auth>
-                        <p class="sidebar-title">Tu as un document ?</p>
-                        <p class="text-muted" style="margin-bottom:12px;line-height:1.5">
-                            Partage-le et gagne des points pour chaque
-                            téléchargement.
-                        </p>
-                        <a href="upload.html">
-                            <button class="btn btn-primary btn-full">
-                                Uploader un document
+                        <div class="panel-actions">
+                            <button class="btn btn-secondary btn-full btn-sm"
+                                    id="btn-panel-preview">
+                                👁 Aperçu
                             </button>
-                        </a>
-                    </div>
-
-                    <!-- CTA inscription — visible seulement si non connecté -->
-                    <div class="card" data-noauth>
-                        <p class="sidebar-title">Rejoins la communauté</p>
-                        <p class="text-muted" style="margin-bottom:12px;line-height:1.5">
-                            Inscris-toi pour télécharger et partager
-                            des documents.
-                        </p>
-                        <a href="register.html">
-                            <button class="btn btn-primary btn-full">
-                                S'inscrire gratuitement
+                            <button class="btn btn-primary btn-full btn-sm"
+                                    id="btn-panel-download"
+                                    data-auth>
+                                Télécharger
                             </button>
-                        </a>
-                    </div>
+                            <a href="login.html" data-noauth>
+                                <button class="btn btn-secondary btn-full btn-sm">
+                                    Connecte-toi pour télécharger
+                                </button>
+                            </a>
+                            <button class="btn btn-secondary btn-full btn-sm"
+                                    id="btn-panel-favorite"
+                                    data-auth>
+                                ♡ Favori
+                            </button>
+                        </div>
 
-                </aside>
+                        <div class="divider"></div>
+
+                        <!-- Vote étoiles -->
+                        <div class="vote-zone" data-auth id="panel-vote-zone">
+                            <span class="text-muted text-sm">Ta note :</span>
+                            <div class="star-rating" id="panel-stars-input">
+                                <button class="star" data-value="1">★</button>
+                                <button class="star" data-value="2">★</button>
+                                <button class="star" data-value="3">★</button>
+                                <button class="star" data-value="4">★</button>
+                                <button class="star" data-value="5">★</button>
+                            </div>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <!-- Commentaires résumés -->
+                        <p class="sidebar-title">Commentaires</p>
+                        <div id="panel-comments"></div>
+                        <a id="btn-see-all-comments" href="#">
+                            <span class="link text-sm">
+                                Voir tous les commentaires →
+                            </span>
+                        </a>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- VIEWER OVERLAY — en dehors du layout pour couvrir toute la page -->
+            <div class="viewer-overlay" id="viewer-overlay">
+                <div class="viewer-modal">
+                    <div class="viewer-toolbar">
+                        <span class="viewer-modal-title"
+                            id="viewer-modal-title"></span>
+                        <button class="viewer-close-btn"
+                                id="btn-close-viewer">✕</button>
+                    </div>
+                    <!-- Contenu injecté par JS selon le type de fichier -->
+                    <div class="viewer-body" id="viewer-body"></div>
+                    <div class="viewer-footer">
+                        <span class="text-muted text-sm"
+                            id="viewer-page-info"></span>
+                        <button class="btn btn-primary btn-sm"
+                                id="btn-viewer-download">
+                            Télécharger
+                        </button>
+                    </div>
+                </div>
             </div>
 
         </div>

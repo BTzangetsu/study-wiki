@@ -14,6 +14,7 @@
 #include "routes/LeaderboardRoutes.hpp"
 #include "routes/ReportRoutes.hpp"
 #include "routes/AdminRoutes.hpp"
+#include "routes/AdminRequestRoutes.hpp"
 #include "routes/SuggestionRoutes.hpp"
 
 #include <thread>
@@ -70,6 +71,7 @@ int main() {
     LeaderboardRoutes::Register(app, pool);
     ReportRoutes::Register     (app, pool, sessions);
     AdminRoutes::Register      (app, pool, sessions);
+    AdminRequestRoutes::Register(app, pool, sessions, rate_limiter);
     SuggestionRoutes::Register (app, pool, sessions, rate_limiter);
 
     CROW_ROUTE(app, "/api/health")

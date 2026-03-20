@@ -107,10 +107,10 @@ public:
             // Détecte si c'est un email (contient @) ou un username
             std::string query;
             if (identifier.find('@') != std::string::npos) {
-                query = "SELECT id, username, password_hash, is_active, is_admin "
+                query = "SELECT id, username, password_hash, is_active, is_admin, is_super_admin "
                         "FROM users WHERE email = ? LIMIT 1";
             } else {
-                query = "SELECT id, username, password_hash, is_active, is_admin "
+                query = "SELECT id, username, password_hash, is_active, is_admin, is_super_admin "
                         "FROM users WHERE username = ? LIMIT 1";
             }
 
@@ -128,6 +128,7 @@ public:
                 auto stored     = row[2]; // format "salt:hash"
                 bool is_active  = row[3] == "1";
                 bool is_admin   = row[4] == "1";
+                bool is_super_admin = row[5] == "1";
 
                 if (!is_active)
                     return crow::response(403, R"({"error":"Account banned"})");
@@ -155,7 +156,7 @@ public:
                     {std::to_string(user_id)});
 
                 std::string token = sessions.CreateSession(
-                    user_id, username, is_admin);
+                    user_id, username, is_admin,is_super_admin);
 
                 crow::response res(200);
                 res.add_header("Content-Type", "application/json");

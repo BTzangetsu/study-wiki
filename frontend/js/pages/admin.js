@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await loadStats();
+    if (currentUser?.is_super_admin) {
+        document.getElementById('tab-admin-requests').style.display = '';
+    }
     await loadTab('reports');
     bindTabs();
 });
@@ -78,6 +81,7 @@ async function loadTab(tab) {
         if (tab === 'documents')   await loadDocuments(state, content);
         if (tab === 'suggestions') await loadSuggestions(state, content);
         if (tab === 'users')       await loadUsers(state, content);
+        if (tab === 'admin-requests') await loadAdminRequests(state, content);
     } catch (err) {
         state.innerHTML = `<div class="state-error">
             <span>Erreur : ${escapeHtml(err.message)}</span>
@@ -380,6 +384,97 @@ async function loadUsers(state, content) {
             await loadTab('users');
         } catch (err) {
             showToast(err.message || 'Erreur', 'error');
+        }
+    });
+}
+
+async function loadAdminRequests(state, content) {
+    const data = await get('/api/admin-requests');
+    state.innerHTML = '';
+
+    if (data.requests.length === 0) {
+        state.innerHTML = `<div class="state-empty">
+            <span>Aucune demande en attente</span>
+        </div>`;
+        return;
+    }
+
+    content.innerHTML = `
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Utilisateur</th>
+                <th>Points</th>
+                <th>Docs</th>
+                <th>Raison</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${data.requests.map(r => `
+            <tr>
+                <td>
+                    <a href="profile.html?id=${r.user_id}"
+                       class="link">
+                        ${escapeHtml(r.username)}
+                    </a>
+                </td>
+                <td>${r.points} pts</td>
+                <td>${r.doc_count} docs</td>
+                <td style="max-width:300px;font-size:13px;
+                           color:var(--gray-600)">
+                    ${escapeHtml(r.reason.substring(0, 120))}
+                    ${r.reason.length > 120 ? '…' : ''}
+                </td>
+                <td class="text-muted">
+                    ${formatDate(r.created_at)}
+                </td>
+                <td>
+                    <div class="admin-actions">
+                        <button class="btn btn-primary btn-sm
+                                       btn-approve-admin"
+                                data-id="${r.id}">
+                            Approuver
+                        </button>
+                        <button class="btn btn-danger btn-sm
+                                       btn-reject-admin"
+                                data-id="${r.id}">
+                            Refuser
+                        </button>
+                    </div>
+                </td>
+            </tr>`).join('')}
+        </tbody>
+    </table>`;
+
+    content.addEventListener('click', async (e) => {
+        const approveBtn = e.target.closest('.btn-approve-admin');
+        const rejectBtn  = e.target.closest('.btn-reject-admin');
+
+        if (approveBtn) {
+            if (!confirm('Approuver cette demande et rendre cet utilisateur admin ?'))
+                return;
+            try {
+                await patch(`/api/admin-requests/${approveBtn.dataset.id}`,
+                    { status: 'approved' });
+                showToast('Utilisateur promu admin');
+                await loadTab('admin-requests');
+            } catch (err) {
+                showToast(err.message || 'Erreur', 'error');
+            }
+        }
+
+        if (rejectBtn) {
+            if (!confirm('Refuser cette demande ?')) return;
+            try {
+                await patch(`/api/admin-requests/${rejectBtn.dataset.id}`,
+                    { status: 'rejected' });
+                showToast('Demande refusée');
+                await loadTab('admin-requests');
+            } catch (err) {
+                showToast(err.message || 'Erreur', 'error');
+            }
         }
     });
 }

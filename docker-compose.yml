@@ -19,6 +19,7 @@ services:
       - ./backend/src/db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
       - ./backend/src/db/migrations/002_badges.sql:/docker-entrypoint-initdb.d/002_badges.sql
       - ./backend/src/db/migrations/003_suggestions.sql:/docker-entrypoint-initdb.d/003_suggestions.sql
+      - ./backend/src/db/migrations/004_admin_system.sql:/docker-entrypoint-initdb.d/004_admin_system.sql
     networks:
       - study-wiki-network
     # healthcheck — le backend attend que MariaDB soit prêt
@@ -36,6 +37,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      #limite les logs. 10Mo max par fichier, 3 fichiers max (rotation)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     container_name: study-wiki-backend
     restart: unless-stopped
     # Monte le fichier .env comme source de variables
